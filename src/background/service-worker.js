@@ -2,6 +2,15 @@ import { MAPS, UTILITY_TYPES, CACHE_TTL_MS } from '../modules/config.js';
 import { fetchUtilityList, fetchOfficialNadeList } from '../modules/csnades-scraper.js';
 import { Cache } from '../modules/cache.js';
 
+// Limpia el caché automáticamente en cada instalación o actualización,
+// para que los usuarios nunca vean datos obsoletos tras un update.
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install' || reason === 'update') {
+    Cache.clear();
+    console.log(`[FU] cache cleared on ${reason}`);
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'FETCH_UTILITIES') {
     const map = message.map;
