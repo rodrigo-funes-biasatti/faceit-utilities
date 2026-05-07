@@ -26,20 +26,19 @@ let currentMap = null;
 let mapObserver = null;
 
 // ─── Detección de navegación SPA ─────────────────────────────────────────────
-// FACEIT usa React Router. Los content scripts viven en un "isolated world"
-// separado del contexto de la página, por lo que parchear history.pushState
-// no intercepta las llamadas del router de FACEIT.
-// Solución: polling de la URL cada 500ms — simple y confiable.
+// Polling de URL cada 500ms. popstate cubre back/forward instantáneamente;
+// ambos handlers comparten lastUrl para que no se duplique la llamada.
 let lastUrl = location.href;
 
-setInterval(() => {
+function handleUrlChange() {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
     onPageChange();
   }
-}, 500);
+}
 
-window.addEventListener('popstate', onPageChange);
+setInterval(handleUrlChange, 500);
+window.addEventListener('popstate', handleUrlChange);
 
 // ─── Detección del mapa desde el DOM ─────────────────────────────────────────
 function normalizeMapName(raw) {
@@ -266,7 +265,7 @@ async function onPageChange() {
   injectPanel();
   showStatus('Esperando votación de mapa...');
 
-  const check = async () => {
+  const checkFn = async () => {
     const map = detectMapFromDOM();
     if (map && map !== currentMap) {
       mapObserver?.disconnect();
@@ -274,12 +273,29 @@ async function onPageChange() {
     }
   };
 
-  mapObserver = new MutationObserver(check);
-  mapObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
-  await check(); // Revisar inmediatamente por si el mapa ya está visible
+  // Throttle: document.body.innerText fuerza un reflow completo.
+  // En una React SPA como FACEIT el observer puede dispararse docenas de veces
+  // por segundo; ejecutar innerText en cada callback causaría jank visible.
+  // Con throttle de 400ms lo limitamos a ≤2-3 veces/segundo.
+  // characterData:true se omite — React actualiza el DOM insertando nuevos
+  // nodos (childList), no mutando text nodes existentes.
+  mapObserver = new MutationObserver(throttle(checkFn, 400));
+  mapObserver.observe(document.body, { childList: true, subtree: true });
+  await checkFn(); // Check inicial sin throttle para respuesta inmediata
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function throttle(fn, ms) {
+  let last = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - last >= ms) {
+      last = now;
+      fn.apply(this, args);
+    }
+  };
+}
+
 function escapeHtml(str) {
   return str
     .replace(/&/g, '&amp;')

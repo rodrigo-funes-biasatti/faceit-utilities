@@ -5,6 +5,10 @@
 
 import { CSNADES_BASE } from './config.js';
 
+// Compilada una sola vez al cargar el módulo en lugar de en cada llamada a fetchOfficialNadeList.
+// Requiere resetear lastIndex antes de cada uso porque tiene flag /g.
+const CHUNK_REGEX = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
+
 function normalizeSide(team) {
   if (team === 't') return 'T';
   if (team === 'ct') return 'CT';
@@ -103,9 +107,9 @@ export async function fetchOfficialNadeList(map, utilityType) {
 
   // Extraer y decodificar cada chunk del RSC payload
   const chunks = [];
-  const chunkRegex = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
+  CHUNK_REGEX.lastIndex = 0; // reset obligatorio: la regex es stateful por el flag /g
   let m;
-  while ((m = chunkRegex.exec(html)) !== null) {
+  while ((m = CHUNK_REGEX.exec(html)) !== null) {
     try {
       chunks.push(JSON.parse('"' + m[1] + '"'));
     } catch {}
