@@ -100,7 +100,12 @@ function injectPanel() {
   document.getElementById('fu-close').addEventListener('click', closePanel);
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
-    if (!map) { showStatus('Seleccioná un mapa para ver las utilidades.'); return; }
+    if (!map) {
+      setMapIcon(null);
+      showStatus('Seleccioná un mapa para ver las utilidades.');
+      return;
+    }
+    setMapIcon(map);
     loadForMap(map);
   });
 }
@@ -120,16 +125,10 @@ function showStatus(msg) {
 
 // ─── Render de utilidades ─────────────────────────────────────────────────────
 function renderUtilities(map, data) {
+  setMapIcon(map);
   if (!browseMode) {
     const mapEl = document.getElementById('fu-map-name');
     if (mapEl) mapEl.textContent = MAP_DISPLAY[map] ?? map;
-
-    const mapIcon = document.getElementById('fu-map-icon');
-    if (mapIcon) {
-      mapIcon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
-      mapIcon.alt = MAP_DISPLAY[map] ?? map;
-      mapIcon.classList.remove('fu-hidden');
-    }
   }
 
   const content = document.getElementById('fu-content');
@@ -357,8 +356,10 @@ async function onPageChange() {
     // Si el usuario ya había elegido un mapa, mantenerlo; si no, mostrar prompt
     const select = document.getElementById('fu-map-select');
     if (select?.value) {
+      setMapIcon(select.value);
       await loadForMap(select.value);
     } else {
+      setMapIcon(null);
       showStatus('Seleccioná un mapa para ver las utilidades.');
     }
     return;
@@ -375,8 +376,7 @@ async function onPageChange() {
   currentMap = null;
   const mapEl = document.getElementById('fu-map-name');
   if (mapEl) mapEl.textContent = 'Esperando mapa...';
-  const mapIcon = document.getElementById('fu-map-icon');
-  if (mapIcon) { mapIcon.src = ''; mapIcon.classList.add('fu-hidden'); }
+  setMapIcon(null);
 
   if (MOCK.enabled) {
     await loadForMap(MOCK.map);
@@ -400,6 +400,19 @@ async function onPageChange() {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function setMapIcon(map) {
+  const icon = document.getElementById('fu-map-icon');
+  if (!icon) return;
+  if (map) {
+    icon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
+    icon.alt = MAP_DISPLAY[map] ?? map;
+    icon.classList.remove('fu-hidden');
+  } else {
+    icon.src = '';
+    icon.classList.add('fu-hidden');
+  }
+}
+
 function throttle(fn, ms) {
   let last = 0;
   return function (...args) {
