@@ -242,10 +242,14 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
 
   try {
     // El fetch se delega al service worker para evadir restricciones CORS del servidor.
+    // El service worker devuelve base64 porque ArrayBuffer no sobrevive la serialización JSON de sendResponse.
     const res = await chrome.runtime.sendMessage({ type: 'FETCH_VIDEO', url: videoUrl });
     if (!res?.ok) throw new Error(res?.error ?? 'fetch failed');
 
-    const blob = new Blob([res.buffer], { type: res.mime });
+    const binary = atob(res.base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.mime });
     const blobUrl = URL.createObjectURL(blob);
 
     if (!inner || !wrap.isConnected) {

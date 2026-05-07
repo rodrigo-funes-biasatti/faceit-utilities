@@ -50,6 +50,8 @@ async function fetchAndMergeType(map, type) {
 // El content script no puede hacer fetch cross-origin a assets.csnades.gg por CORS.
 // El service worker sí puede (tiene host_permissions sin restricción CORS).
 // Devuelve el ArrayBuffer para que el content script cree un blob URL.
+// ArrayBuffer no es JSON-serializable: sendResponse lo convertiría en {}.
+// Solución: codificar a base64 (string) antes de enviarlo y decodificar en el content script.
 async function handleFetchVideo(url, sendResponse) {
   try {
     const parsed = new URL(url);
@@ -61,7 +63,15 @@ async function handleFetchVideo(url, sendResponse) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buffer = await res.arrayBuffer();
     const mime = res.headers.get('content-type') ?? 'video/mp4';
-    sendResponse({ ok: true, buffer, mime });
+
+    // Codificar en chunks para evitar "Maximum call stack size exceeded"
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const CHUNK = 8192;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    sendResponse({ ok: true, base64: btoa(binary), mime });
   } catch (err) {
     sendResponse({ ok: false, error: err.message });
   }
