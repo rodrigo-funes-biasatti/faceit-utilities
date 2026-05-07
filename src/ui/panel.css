@@ -1,0 +1,308 @@
+/* Prefijo fu- en todas las clases para no colisionar con el CSS de FACEIT */
+
+#fu-root {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2147483647; /* Max z-index posible */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Botón de toggle pegado al borde derecho */
+#fu-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff5500;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  width: 34px;
+  height: 52px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+  transition: background 0.2s;
+}
+
+#fu-toggle:hover {
+  background: #e64d00;
+}
+
+/* Panel principal */
+#fu-panel {
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+  max-height: 75vh;
+  background: #16162a;
+  border: 1px solid #252545;
+  border-radius: 8px 0 0 8px;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#fu-panel.fu-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(16px);
+}
+
+/* Header */
+#fu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #0f0f22;
+  border-bottom: 1px solid #252545;
+  flex-shrink: 0;
+}
+
+#fu-map-name {
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fu-badge {
+  font-size: 10px;
+  color: #ff5500;
+  text-decoration: none;
+  padding: 2px 6px;
+  background: rgba(255, 85, 0, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fu-badge:hover {
+  background: rgba(255, 85, 0, 0.2);
+}
+
+#fu-close {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+#fu-close:hover {
+  color: #aaa;
+}
+
+/* Área de contenido scrolleable */
+#fu-content {
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a4a #0a0a1a;
+}
+
+#fu-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+#fu-content::-webkit-scrollbar-track {
+  background: #0a0a1a;
+}
+
+#fu-content::-webkit-scrollbar-thumb {
+  background: #2a2a4a;
+  border-radius: 2px;
+}
+
+/* Mensajes de estado */
+.fu-status {
+  padding: 24px 16px;
+  text-align: center;
+  color: #555;
+  font-size: 12px;
+}
+
+/* Sección por lado (T / CT) */
+.fu-side-block {
+  margin-bottom: 2px;
+}
+
+.fu-side-label {
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fu-side-t {
+  color: #f0a500;
+  background: rgba(240, 165, 0, 0.08);
+}
+
+.fu-side-ct {
+  color: #3fa8ff;
+  background: rgba(63, 168, 255, 0.08);
+}
+
+/* Acordeón por tipo de utility */
+.fu-accordion {
+  border-bottom: 1px solid #1a1a32;
+}
+
+.fu-accordion[open] .fu-accordion-summary {
+  background: #1a1a32;
+}
+
+.fu-accordion-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #bbbbbb;
+  list-style: none;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.fu-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.fu-accordion-summary:hover {
+  background: #1a1a32;
+}
+
+.fu-count {
+  color: #444;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* Puntos de color por tipo de utility */
+.fu-util-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fu-dot-smokes {
+  background: #aaaaaa;
+}
+
+.fu-dot-flashbangs {
+  background: #ffffaa;
+}
+
+.fu-dot-molotovs {
+  background: #ff6633;
+}
+
+/* Lista de items */
+.fu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #111128;
+}
+
+.fu-item {
+  border-bottom: 1px solid #0d0d22;
+}
+
+.fu-item-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #999;
+  padding: 7px 12px 7px 28px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.fu-item-btn:hover {
+  background: #1a1a32;
+  color: #eeeeee;
+}
+
+/* Contenedor del video (lazy loaded) */
+.fu-video-wrap {
+  background: #0a0a1c;
+  padding: 8px;
+}
+
+.fu-video-wrap.fu-hidden {
+  display: none;
+}
+
+.fu-video-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fu-video-inner iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  border: none;
+}
+
+.fu-video-loading {
+  padding: 12px;
+  text-align: center;
+  color: #555;
+  font-size: 11px;
+}
+
+.fu-video-fallback {
+  padding: 8px;
+  text-align: center;
+}
+
+.fu-watch-link {
+  display: inline-block;
+  color: #ff5500;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 85, 0, 0.3);
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.fu-watch-link:hover {
+  background: rgba(255, 85, 0, 0.1);
+}
+
+.fu-watch-link--small {
+  font-size: 10px;
+  color: #555;
+  border-color: #222;
+  align-self: flex-end;
+}
+
+.fu-watch-link--small:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+}

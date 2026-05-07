@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>FACEIT Utilities</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>FACEIT Utilities</h1>
+      <p>CS2 utility lineups</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="status-row">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">Verificando...</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="row">
+      <span class="label">Fuente de datos</span>
+      <a href="https://csnades.gg" target="_blank" class="link">csnades.gg</a>
+    </div>
+    <div class="row">
+      <span class="label">Caché por mapa</span>
+      <span class="value">24 horas</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <button id="clear-cache">Limpiar caché</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
