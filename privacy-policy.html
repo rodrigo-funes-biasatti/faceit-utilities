@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — FACEIT Utilities</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 680px; margin: 60px auto; padding: 0 24px; color: #222; line-height: 1.7; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; }
+    p, li { font-size: 0.95rem; color: #444; }
+    a { color: #ff5500; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy — FACEIT Utilities</h1>
+  <p><em>Last updated: May 2025</em></p>
+
+  <h2>What this extension does</h2>
+  <p>
+    FACEIT Utilities is a Chrome extension that detects the current map in a FACEIT CS2 match room
+    and displays relevant utility lineups (smokes, flashbangs, molotovs, etc.) from
+    <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer">csnades.gg</a>.
+  </p>
+
+  <h2>Data we collect</h2>
+  <p>We do not collect, transmit, or store any personal data. Specifically:</p>
+  <ul>
+    <li>No user accounts, no registration, no tracking.</li>
+    <li>No browsing history is recorded or transmitted.</li>
+    <li>The extension reads the current tab's URL solely to detect FACEIT match room pages.</li>
+  </ul>
+
+  <h2>Local cache</h2>
+  <p>
+    Utility lineup data fetched from csnades.gg is cached locally on your device using
+    <code>chrome.storage.local</code> for up to 24 hours to avoid redundant network requests.
+    This data contains only CS2 game information (nade lineups) and no personal information.
+    It never leaves your device.
+  </p>
+
+  <h2>Third-party services</h2>
+  <p>
+    The extension fetches publicly available data from
+    <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer">csnades.gg</a>.
+    No personal data is sent to csnades.gg or any other third party.
+    Please refer to csnades.gg's own privacy policy for information about their data practices.
+  </p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>storage</strong> — used exclusively for the local nade lineup cache described above.</li>
+    <li><strong>activeTab</strong> — used to read the current tab's URL and display extension status in the popup.</li>
+  </ul>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this policy changes, the updated version will be published at this URL.
+    Continued use of the extension after changes constitutes acceptance of the new policy.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    For any questions, open an issue on
+    <a href="https://github.com/rodrigo-funes-biasatti/faceit-utilities" target="_blank" rel="noopener noreferrer">GitHub</a>.
+  </p>
+</body>
+</html>
