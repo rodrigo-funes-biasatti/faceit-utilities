@@ -428,8 +428,7 @@ function filterNades(query) {
 
       accordion.style.display = accordionVisible ? '' : 'none';
       if (accordionVisible) {
-        // Auto-abrir acordeón si hay query activa, restaurar si se borra
-        if (q) accordion.open = true;
+        accordion.open = !!q; // abrir si hay query, cerrar si se borró
         sideVisible += accordionVisible;
       }
     });
