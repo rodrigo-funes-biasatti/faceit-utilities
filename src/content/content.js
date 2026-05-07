@@ -89,6 +89,9 @@ function injectPanel() {
         <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         <button id="fu-close" title="Cerrar">✕</button>
       </div>
+      <div id="fu-search-bar" class="fu-hidden">
+        <input id="fu-search" type="text" placeholder="Buscar lata..." autocomplete="off" spellcheck="false"/>
+      </div>
       <div id="fu-content">
         <div class="fu-status">Esperando sala de FACEIT...</div>
       </div>
@@ -98,6 +101,7 @@ function injectPanel() {
   document.body.appendChild(root);
   document.getElementById('fu-toggle').addEventListener('click', togglePanel);
   document.getElementById('fu-close').addEventListener('click', closePanel);
+  document.getElementById('fu-search').addEventListener('input', (e) => filterNades(e.target.value));
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
     if (!map) {
@@ -121,6 +125,9 @@ function closePanel() {
 function showStatus(msg) {
   const el = document.getElementById('fu-content');
   if (el) el.innerHTML = `<div class="fu-status">${msg}</div>`;
+  document.getElementById('fu-search-bar')?.classList.add('fu-hidden');
+  const input = document.getElementById('fu-search');
+  if (input) input.value = '';
 }
 
 // ─── Render de utilidades ─────────────────────────────────────────────────────
@@ -203,6 +210,8 @@ function renderUtilities(map, data) {
   content.querySelectorAll('.fu-item-btn').forEach((btn) => {
     btn.addEventListener('click', handleItemClick);
   });
+
+  document.getElementById('fu-search-bar')?.classList.remove('fu-hidden');
 }
 
 // ─── Video toggle ─────────────────────────────────────────────────────────────
@@ -400,6 +409,49 @@ async function onPageChange() {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function filterNades(query) {
+  const q = query.toLowerCase().trim();
+  let totalVisible = 0;
+
+  document.querySelectorAll('.fu-side-block').forEach((sideBlock) => {
+    let sideVisible = 0;
+
+    sideBlock.querySelectorAll('.fu-accordion').forEach((accordion) => {
+      let accordionVisible = 0;
+
+      accordion.querySelectorAll('.fu-item').forEach((item) => {
+        const name = item.querySelector('.fu-item-btn')?.textContent.toLowerCase() ?? '';
+        const match = !q || name.includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) accordionVisible++;
+      });
+
+      accordion.style.display = accordionVisible ? '' : 'none';
+      if (accordionVisible) {
+        // Auto-abrir acordeón si hay query activa, restaurar si se borra
+        if (q) accordion.open = true;
+        sideVisible += accordionVisible;
+      }
+    });
+
+    sideBlock.style.display = sideVisible ? '' : 'none';
+    totalVisible += sideVisible;
+  });
+
+  const content = document.getElementById('fu-content');
+  const noResults = content?.querySelector('.fu-no-results');
+  if (q && totalVisible === 0) {
+    if (!noResults) {
+      const el = document.createElement('div');
+      el.className = 'fu-status fu-no-results';
+      el.textContent = 'Sin resultados.';
+      content?.appendChild(el);
+    }
+  } else {
+    noResults?.remove();
+  }
+}
+
 function setMapIcon(map) {
   const icon = document.getElementById('fu-map-icon');
   if (!icon) return;

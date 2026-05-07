@@ -151,6 +151,39 @@
   color: #aaa;
 }
 
+/* Barra de búsqueda */
+#fu-search-bar {
+  padding: 6px 10px;
+  background: #0f0f22;
+  border-bottom: 1px solid #252545;
+  flex-shrink: 0;
+}
+
+#fu-search-bar.fu-hidden {
+  display: none;
+}
+
+#fu-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1a1a32;
+  border: 1px solid #252545;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#fu-search::placeholder {
+  color: #444;
+}
+
+#fu-search:focus {
+  border-color: #ff5500;
+}
+
 /* Área de contenido scrolleable */
 #fu-content {
   overflow-y: auto;
