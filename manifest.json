@@ -7,7 +7,7 @@
   "permissions": ["storage", "activeTab"],
 
   "host_permissions": [
-    "https://*.faceit.com/*",
+    "https://www.faceit.com/*",
     "https://csnades.gg/*",
     "https://assets.csnades.gg/*"
   ],

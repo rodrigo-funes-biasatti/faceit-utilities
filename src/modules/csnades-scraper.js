@@ -56,9 +56,12 @@ export async function fetchUtilityList(map, utilityType) {
 }
 
 // ─── Official nades (RSC payload parsing) ────────────────────────────────────
-// csnades.gg usa Next.js App Router con React Server Components.
-// Los nades oficiales están embebidos en self.__next_f.push([1, "..."]) scripts.
-// Parseamos estos chunks para extraer objetos con id "nade_XXX".
+// csnades.gg is a Next.js App Router site. Its curated (non-community) nade
+// data has no public JSON API — it is embedded in the page HTML inside
+// React Server Component streaming chunks (self.__next_f.push([1, "..."])).
+// We fetch the public csnades.gg page for each map/utility combination,
+// extract only the nade objects (id, title, team, slug, video assets),
+// and discard the rest. No user data is involved at any point.
 function extractNadeObjects(payload) {
   const results = [];
   const marker = '"id":"nade_';

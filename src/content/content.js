@@ -48,6 +48,9 @@ function normalizeMapName(raw) {
 }
 
 function detectMapFromDOM() {
+  // Reads visible page text solely to detect which CS2 map name appears
+  // in the FACEIT match room UI (e.g. "Mirage", "Ancient").
+  // No page content is stored, transmitted, or used for any other purpose.
   const text = document.body.innerText.toLowerCase();
   for (const name of CS2_MAP_NAMES) {
     if (text.includes(name)) return normalizeMapName(name);
