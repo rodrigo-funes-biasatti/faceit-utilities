@@ -67,15 +67,7 @@ function injectPanel() {
   root.id = 'fu-root';
   root.innerHTML = `
     <button id="fu-toggle" title="FACEIT Utilities">
-      <svg width="20" height="20" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g stroke="white" stroke-width="52" stroke-linecap="square">
-          <line x1="256" y1="128" x2="256" y2="208"/>
-          <line x1="256" y1="304" x2="256" y2="384"/>
-          <line x1="128" y1="256" x2="208" y2="256"/>
-          <line x1="304" y1="256" x2="384" y2="256"/>
-        </g>
-        <circle cx="256" cy="256" r="28" fill="white"/>
-      </svg>
+      <img src="${chrome.runtime.getURL('icons/icon32.png')}" width="22" height="22" alt="FACEIT Utilities"/>
     </button>
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">

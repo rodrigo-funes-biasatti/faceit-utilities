@@ -33,6 +33,13 @@
     "128": "icons/icon128.png"
   },
 
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://www.faceit.com/*"]
+    }
+  ],
+
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "FACEIT Utilities",
