@@ -219,6 +219,28 @@ function handleItemClick(e) {
         ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">Abrir en csnades.gg ↗</a>`
         : ''}
     </div>`;
+
+  // Si el video nativo falla (ej: CSP de FACEIT bloquea media-src externo),
+  // reemplazarlo con el link directo a csnades.gg.
+  if (!isYoutube) {
+    const vid = wrap.querySelector('.fu-native-video');
+    if (vid) {
+      vid.addEventListener('error', () => {
+        const fallback = document.createElement('div');
+        fallback.className = 'fu-video-fallback';
+        if (detailUrl) {
+          const link = document.createElement('a');
+          link.href = detailUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.className = 'fu-watch-link';
+          link.textContent = '▶ Ver en csnades.gg';
+          fallback.appendChild(link);
+        }
+        vid.replaceWith(fallback);
+      });
+    }
+  }
 }
 
 // ─── Carga de utilidades ──────────────────────────────────────────────────────
