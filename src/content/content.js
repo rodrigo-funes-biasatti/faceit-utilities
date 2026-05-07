@@ -181,12 +181,20 @@ function handleItemClick(e) {
   const videoUrl  = safeUrl(decodeURIComponent(item.dataset.videoUrl));
 
   if (!wrap.classList.contains('fu-hidden')) {
+    // Revocar blob URLs al cerrar para liberar memoria
+    wrap.querySelectorAll('video[data-blob-url]').forEach((v) => {
+      URL.revokeObjectURL(v.dataset.blobUrl);
+    });
     wrap.classList.add('fu-hidden');
     wrap.innerHTML = '';
     return;
   }
 
   wrap.classList.remove('fu-hidden');
+
+  const linkHtml = detailUrl
+    ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">Abrir en csnades.gg ↗</a>`
+    : '';
 
   if (!videoUrl) {
     wrap.innerHTML = `
@@ -199,44 +207,71 @@ function handleItemClick(e) {
   }
 
   const isYoutube = videoUrl.includes('youtube-nocookie.com');
-  const videoEl = isYoutube
-    ? `<iframe
-        src="${escapeHtml(videoUrl)}"
-        frameborder="0"
-        allowfullscreen
-        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      ></iframe>`
-    : `<video src="${escapeHtml(videoUrl)}" controls preload="none" class="fu-native-video"></video>`;
 
+  if (isYoutube) {
+    wrap.innerHTML = `
+      <div class="fu-video-inner">
+        <iframe
+          src="${escapeHtml(videoUrl)}"
+          frameborder="0"
+          allowfullscreen
+          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        ></iframe>
+        ${linkHtml}
+      </div>`;
+    return;
+  }
+
+  // Videos nativos de assets.csnades.gg: el CSP de FACEIT bloquea media-src externo.
+  // Solución: fetchar el MP4 desde el content script (que tiene host_permissions y
+  // puede ignorar CORS/CSP), convertir a blob URL (same-origin → no bloqueado), e
+  // inyectarlo en el <video>. Se revoca el blob al cerrar para no acumular memoria.
   wrap.innerHTML = `
     <div class="fu-video-inner">
-      ${videoEl}
-      ${detailUrl
-        ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">Abrir en csnades.gg ↗</a>`
-        : ''}
+      <div class="fu-video-loading">Cargando video...</div>
+      ${linkHtml}
     </div>`;
 
-  // Si el video nativo falla (ej: CSP de FACEIT bloquea media-src externo),
-  // reemplazarlo con el link directo a csnades.gg.
-  if (!isYoutube) {
-    const vid = wrap.querySelector('.fu-native-video');
-    if (vid) {
-      vid.addEventListener('error', () => {
-        const fallback = document.createElement('div');
-        fallback.className = 'fu-video-fallback';
-        if (detailUrl) {
-          const link = document.createElement('a');
-          link.href = detailUrl;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.className = 'fu-watch-link';
-          link.textContent = '▶ Ver en csnades.gg';
-          fallback.appendChild(link);
-        }
-        vid.replaceWith(fallback);
-      });
+  fetchBlobVideo(videoUrl, detailUrl, wrap);
+}
+
+async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
+  const inner = wrap.querySelector('.fu-video-inner');
+  const loading = inner?.querySelector('.fu-video-loading');
+
+  try {
+    const res = await fetch(videoUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    if (!inner || !wrap.isConnected) {
+      URL.revokeObjectURL(blobUrl);
+      return;
     }
+
+    const vid = document.createElement('video');
+    vid.src = blobUrl;
+    vid.controls = true;
+    vid.className = 'fu-native-video';
+    vid.dataset.blobUrl = blobUrl; // guardado para revocarlo al cerrar
+    loading?.replaceWith(vid);
+
+  } catch {
+    if (!inner) return;
+    const fallback = document.createElement('div');
+    fallback.className = 'fu-video-fallback';
+    if (detailUrl) {
+      const link = document.createElement('a');
+      link.href = detailUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'fu-watch-link';
+      link.textContent = '▶ Ver en csnades.gg';
+      fallback.appendChild(link);
+    }
+    loading?.replaceWith(fallback);
   }
 }
 
