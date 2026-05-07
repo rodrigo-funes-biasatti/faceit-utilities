@@ -1,10 +1,15 @@
-import { UTILITY_TYPES, CACHE_TTL_MS } from '../modules/config.js';
+import { MAPS, UTILITY_TYPES, CACHE_TTL_MS } from '../modules/config.js';
 import { fetchUtilityList, fetchOfficialNadeList } from '../modules/csnades-scraper.js';
 import { Cache } from '../modules/cache.js';
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'FETCH_UTILITIES') {
-    handleFetchUtilities(message.map, sendResponse);
+    const map = message.map;
+    if (typeof map !== 'string' || !Object.hasOwn(MAPS, map)) {
+      sendResponse({ ok: false, error: `mapa inválido: ${map}` });
+      return;
+    }
+    handleFetchUtilities(map, sendResponse);
     return true;
   }
 });

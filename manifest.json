@@ -4,13 +4,12 @@
   "version": "1.0.0",
   "description": "Muestra utilidades de CS2 (smokes, flashes, molotovs) desde csnades.gg durante partidas de FACEIT",
 
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "activeTab"],
 
   "host_permissions": [
     "https://*.faceit.com/*",
     "https://csnades.gg/*",
-    "https://assets.csnades.gg/*",
-    "https://open.faceit.com/*"
+    "https://assets.csnades.gg/*"
   ],
 
   "background": {

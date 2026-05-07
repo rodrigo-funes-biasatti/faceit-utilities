@@ -73,7 +73,7 @@ function injectPanel() {
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">
         <span id="fu-map-name">Esperando mapa...</span>
-        <a href="https://csnades.gg" target="_blank" class="fu-badge">csnades.gg</a>
+        <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         <button id="fu-close" title="Cerrar">✕</button>
       </div>
       <div id="fu-content">
@@ -176,8 +176,10 @@ function handleItemClick(e) {
   const btn = e.currentTarget;
   const item = btn.closest('.fu-item');
   const wrap = item.querySelector('.fu-video-wrap');
-  const detailUrl = decodeURIComponent(item.dataset.detailUrl);
-  const videoUrl = decodeURIComponent(item.dataset.videoUrl);
+
+  // safeUrl valida protocolo https:// — bloquea javascript: y data: de la API externa
+  const detailUrl = safeUrl(decodeURIComponent(item.dataset.detailUrl));
+  const videoUrl  = safeUrl(decodeURIComponent(item.dataset.videoUrl));
 
   if (!wrap.classList.contains('fu-hidden')) {
     wrap.classList.add('fu-hidden');
@@ -190,7 +192,9 @@ function handleItemClick(e) {
   if (!videoUrl) {
     wrap.innerHTML = `
       <div class="fu-video-fallback">
-        <a href="${escapeHtml(detailUrl)}" target="_blank" class="fu-watch-link">▶ Ver en csnades.gg</a>
+        ${detailUrl
+          ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link">▶ Ver en csnades.gg</a>`
+          : '<span class="fu-status">Video no disponible</span>'}
       </div>`;
     return;
   }
@@ -201,6 +205,7 @@ function handleItemClick(e) {
         src="${escapeHtml(videoUrl)}"
         frameborder="0"
         allowfullscreen
+        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       ></iframe>`
     : `<video src="${escapeHtml(videoUrl)}" controls preload="none" class="fu-native-video"></video>`;
@@ -208,9 +213,9 @@ function handleItemClick(e) {
   wrap.innerHTML = `
     <div class="fu-video-inner">
       ${videoEl}
-      <a href="${escapeHtml(detailUrl)}" target="_blank" class="fu-watch-link fu-watch-link--small">
-        Abrir en csnades.gg ↗
-      </a>
+      ${detailUrl
+        ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">Abrir en csnades.gg ↗</a>`
+        : ''}
     </div>`;
 }
 
@@ -281,6 +286,16 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// Valida que una URL use protocolo https — previene javascript: y data: injection.
+function safeUrl(url) {
+  if (!url) return null;
+  try {
+    return new URL(url).protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
