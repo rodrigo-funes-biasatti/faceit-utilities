@@ -24,6 +24,7 @@ const MAP_DISPLAY = {
 // ─── Estado ───────────────────────────────────────────────────────────────────
 let currentMap = null;
 let mapObserver = null;
+let browseMode = false;
 
 // ─── Detección de navegación SPA ─────────────────────────────────────────────
 // Polling de URL cada 500ms. popstate cubre back/forward instantáneamente;
@@ -71,6 +72,18 @@ function injectPanel() {
     </button>
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">
+        <select id="fu-map-select" class="fu-hidden">
+          <option value="">— Elegir mapa —</option>
+          <option value="ancient">Ancient</option>
+          <option value="anubis">Anubis</option>
+          <option value="dust2">Dust 2</option>
+          <option value="inferno">Inferno</option>
+          <option value="mirage">Mirage</option>
+          <option value="nuke">Nuke</option>
+          <option value="overpass">Overpass</option>
+          <option value="train">Train</option>
+          <option value="vertigo">Vertigo</option>
+        </select>
         <img id="fu-map-icon" class="fu-hidden" alt="" width="24" height="24"/>
         <span id="fu-map-name">Esperando mapa...</span>
         <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
@@ -85,6 +98,11 @@ function injectPanel() {
   document.body.appendChild(root);
   document.getElementById('fu-toggle').addEventListener('click', togglePanel);
   document.getElementById('fu-close').addEventListener('click', closePanel);
+  document.getElementById('fu-map-select').addEventListener('change', (e) => {
+    const map = e.target.value;
+    if (!map) { showStatus('Seleccioná un mapa para ver las utilidades.'); return; }
+    loadForMap(map);
+  });
 }
 
 function togglePanel() {
@@ -102,14 +120,16 @@ function showStatus(msg) {
 
 // ─── Render de utilidades ─────────────────────────────────────────────────────
 function renderUtilities(map, data) {
-  const mapEl = document.getElementById('fu-map-name');
-  if (mapEl) mapEl.textContent = MAP_DISPLAY[map] ?? map;
+  if (!browseMode) {
+    const mapEl = document.getElementById('fu-map-name');
+    if (mapEl) mapEl.textContent = MAP_DISPLAY[map] ?? map;
 
-  const mapIcon = document.getElementById('fu-map-icon');
-  if (mapIcon) {
-    mapIcon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
-    mapIcon.alt = MAP_DISPLAY[map] ?? map;
-    mapIcon.classList.remove('fu-hidden');
+    const mapIcon = document.getElementById('fu-map-icon');
+    if (mapIcon) {
+      mapIcon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
+      mapIcon.alt = MAP_DISPLAY[map] ?? map;
+      mapIcon.classList.remove('fu-hidden');
+    }
   }
 
   const content = document.getElementById('fu-content');
@@ -328,8 +348,27 @@ async function onPageChange() {
 
   if (!isRoomPage()) {
     currentMap = null;
+    browseMode = true;
+    injectPanel();
+    // Mostrar select, ocultar nombre/ícono de sala
+    document.getElementById('fu-map-select')?.classList.remove('fu-hidden');
+    document.getElementById('fu-map-name')?.classList.add('fu-hidden');
+    document.getElementById('fu-map-icon')?.classList.add('fu-hidden');
+    // Si el usuario ya había elegido un mapa, mantenerlo; si no, mostrar prompt
+    const select = document.getElementById('fu-map-select');
+    if (select?.value) {
+      await loadForMap(select.value);
+    } else {
+      showStatus('Seleccioná un mapa para ver las utilidades.');
+    }
     return;
   }
+
+  // ── Modo sala ──────────────────────────────────────────────────────────────
+  browseMode = false;
+  // Ocultar select y restaurar nombre/ícono
+  document.getElementById('fu-map-select')?.classList.add('fu-hidden');
+  document.getElementById('fu-map-name')?.classList.remove('fu-hidden');
 
   // Resetear estado del lobby anterior ANTES de detectar, para que el nombre del mapa
   // anterior en nuestro propio panel no sea un falso positivo en detectMapFromDOM().
@@ -344,7 +383,6 @@ async function onPageChange() {
     return;
   }
 
-  // Modo real: usa MutationObserver para detectar cuando el mapa aparece en el DOM
   injectPanel();
   showStatus('Esperando votación de mapa...');
 
@@ -356,15 +394,9 @@ async function onPageChange() {
     }
   };
 
-  // Throttle: document.body.innerText fuerza un reflow completo.
-  // En una React SPA como FACEIT el observer puede dispararse docenas de veces
-  // por segundo; ejecutar innerText en cada callback causaría jank visible.
-  // Con throttle de 400ms lo limitamos a ≤2-3 veces/segundo.
-  // characterData:true se omite — React actualiza el DOM insertando nuevos
-  // nodos (childList), no mutando text nodes existentes.
   mapObserver = new MutationObserver(throttle(checkFn, 400));
   mapObserver.observe(document.body, { childList: true, subtree: true });
-  await checkFn(); // Check inicial sin throttle para respuesta inmediata
+  await checkFn();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

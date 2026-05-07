@@ -74,6 +74,32 @@
   flex-shrink: 0;
 }
 
+#fu-map-select {
+  flex: 1;
+  min-width: 0;
+  background: #0f0f22;
+  border: 1px solid #252545;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+#fu-map-select:focus {
+  outline: none;
+  border-color: #ff5500;
+}
+
+#fu-map-select.fu-hidden {
+  display: none;
+}
+
+#fu-map-name.fu-hidden {
+  display: none;
+}
+
 #fu-map-icon {
   width: 24px;
   height: 24px;
