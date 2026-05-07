@@ -200,7 +200,16 @@
   margin-left: auto;
 }
 
-/* Puntos de color por tipo de utility */
+/* Íconos de granada por tipo de utility */
+.fu-util-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  image-rendering: auto;
+}
+
+/* Puntito fallback (combinations u otros sin imagen) */
 .fu-util-dot {
   width: 8px;
   height: 8px;

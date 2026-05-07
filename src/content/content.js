@@ -116,6 +116,12 @@ function renderUtilities(map, data) {
     hegranades: 'HE Grenades',
     combinations: 'Combinations',
   };
+  const typeIcons = {
+    smokes:     chrome.runtime.getURL('icons/grenades/smokes.webp'),
+    flashbangs: chrome.runtime.getURL('icons/grenades/flashbangs.webp'),
+    molotovs:   chrome.runtime.getURL('icons/grenades/molotovs.webp'),
+    hegranades: chrome.runtime.getURL('icons/grenades/hegranades.webp'),
+  };
 
   let html = '';
 
@@ -128,10 +134,13 @@ function renderUtilities(map, data) {
       );
       if (items.length === 0) continue;
 
+      const iconUrl = typeIcons[type];
       sideHtml += `
         <details class="fu-accordion">
           <summary class="fu-accordion-summary">
-            <span class="fu-util-dot fu-dot-${type}"></span>
+            ${iconUrl
+              ? `<img src="${iconUrl}" class="fu-util-icon" alt="${typeLabels[type]}" width="18" height="18"/>`
+              : `<span class="fu-util-dot fu-dot-${type}"></span>`}
             ${typeLabels[type]}
             <span class="fu-count">${items.length}</span>
           </summary>
