@@ -9,6 +9,7 @@
   "host_permissions": [
     "https://*.faceit.com/*",
     "https://csnades.gg/*",
+    "https://assets.csnades.gg/*",
     "https://open.faceit.com/*"
   ],
 

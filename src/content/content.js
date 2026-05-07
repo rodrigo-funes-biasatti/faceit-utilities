@@ -26,21 +26,19 @@ let currentMap = null;
 let mapObserver = null;
 
 // ─── Detección de navegación SPA ─────────────────────────────────────────────
-// FACEIT es una Single Page App con React. Los cambios de URL no disparan
-// un page reload, entonces el event "load" no se vuelve a disparar.
-// Parchamos history.pushState/replaceState para detectar cada navegación.
-(function patchHistory() {
-  const wrap = (fn) =>
-    function (...args) {
-      const result = fn.apply(this, args);
-      window.dispatchEvent(new CustomEvent('fu:navigation'));
-      return result;
-    };
-  history.pushState = wrap(history.pushState);
-  history.replaceState = wrap(history.replaceState);
-})();
+// FACEIT usa React Router. Los content scripts viven en un "isolated world"
+// separado del contexto de la página, por lo que parchear history.pushState
+// no intercepta las llamadas del router de FACEIT.
+// Solución: polling de la URL cada 500ms — simple y confiable.
+let lastUrl = location.href;
 
-window.addEventListener('fu:navigation', onPageChange);
+setInterval(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    onPageChange();
+  }
+}, 500);
+
 window.addEventListener('popstate', onPageChange);
 
 // ─── Detección del mapa desde el DOM ─────────────────────────────────────────
@@ -111,8 +109,14 @@ function renderUtilities(map, data) {
   if (!content) return;
 
   const sides = ['T', 'CT'];
-  const types = ['smokes', 'flashbangs', 'molotovs'];
-  const typeLabels = { smokes: 'Smokes', flashbangs: 'Flashbangs', molotovs: 'Molotovs' };
+  const types = ['smokes', 'flashbangs', 'molotovs', 'hegranades', 'combinations'];
+  const typeLabels = {
+    smokes: 'Smokes',
+    flashbangs: 'Flashbangs',
+    molotovs: 'Molotovs',
+    hegranades: 'HE Grenades',
+    combinations: 'Combinations',
+  };
 
   let html = '';
 
@@ -121,7 +125,7 @@ function renderUtilities(map, data) {
 
     for (const type of types) {
       const items = (data[type] ?? []).filter(
-        (item) => item.side === side || (side === 'T' && item.side === 'UNKNOWN')
+        (item) => item.side === side || item.side === 'UNKNOWN'
       );
       if (items.length === 0) continue;
 
@@ -191,14 +195,19 @@ function handleItemClick(e) {
     return;
   }
 
-  wrap.innerHTML = `
-    <div class="fu-video-inner">
-      <iframe
+  const isYoutube = videoUrl.includes('youtube-nocookie.com');
+  const videoEl = isYoutube
+    ? `<iframe
         src="${escapeHtml(videoUrl)}"
         frameborder="0"
         allowfullscreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      ></iframe>
+      ></iframe>`
+    : `<video src="${escapeHtml(videoUrl)}" controls preload="none" class="fu-native-video"></video>`;
+
+  wrap.innerHTML = `
+    <div class="fu-video-inner">
+      ${videoEl}
       <a href="${escapeHtml(detailUrl)}" target="_blank" class="fu-watch-link fu-watch-link--small">
         Abrir en csnades.gg ↗
       </a>
@@ -230,7 +239,18 @@ function isRoomPage() {
 }
 
 async function onPageChange() {
-  if (!isRoomPage()) return;
+  mapObserver?.disconnect();
+
+  if (!isRoomPage()) {
+    currentMap = null;
+    return;
+  }
+
+  // Resetear estado del lobby anterior ANTES de detectar, para que el nombre del mapa
+  // anterior en nuestro propio panel no sea un falso positivo en detectMapFromDOM().
+  currentMap = null;
+  const mapEl = document.getElementById('fu-map-name');
+  if (mapEl) mapEl.textContent = 'Esperando mapa...';
 
   if (MOCK.enabled) {
     await loadForMap(MOCK.map);
@@ -238,7 +258,6 @@ async function onPageChange() {
   }
 
   // Modo real: usa MutationObserver para detectar cuando el mapa aparece en el DOM
-  mapObserver?.disconnect();
   injectPanel();
   showStatus('Esperando votación de mapa...');
 

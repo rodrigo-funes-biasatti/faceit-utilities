@@ -216,6 +216,14 @@
   background: #ff6633;
 }
 
+.fu-dot-hegranades {
+  background: #44dd88;
+}
+
+.fu-dot-combinations {
+  background: #aa88ff;
+}
+
 /* Lista de items */
 .fu-list {
   list-style: none;
@@ -261,11 +269,13 @@
   gap: 6px;
 }
 
-.fu-video-inner iframe {
+.fu-video-inner iframe,
+.fu-native-video {
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 4px;
   border: none;
+  display: block;
 }
 
 .fu-video-loading {
