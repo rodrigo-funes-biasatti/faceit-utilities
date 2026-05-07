@@ -34,8 +34,12 @@ function parseCommunityItem(item, map, utilityType) {
 
 function parseOfficialItem(item, map, utilityType) {
   const videoUrl = item.assets?.videoHq?.mp4 ?? item.assets?.videoLq?.webm ?? null;
+  // Combinations don't have titleTo/titleFrom — derive name from slug
+  const name = (item.titleTo && item.titleFrom)
+    ? `${item.titleTo} from ${item.titleFrom}`
+    : item.slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   return {
-    name: `${item.titleTo} from ${item.titleFrom}`,
+    name,
     slug: item.slug,
     side: normalizeSide(item.team),
     videoUrl,
@@ -101,6 +105,33 @@ function extractNadeObjects(payload) {
   return results;
 }
 
+// Combinations usan IDs numéricos ("14") en lugar de "nade_xxx", por lo que
+// extractNadeObjects no las detecta. Viven en el array "nades":[...] del payload.
+function extractCombinationNades(payload) {
+  const marker = '"nades":[';
+  const markerIdx = payload.indexOf(marker);
+  if (markerIdx === -1) return [];
+
+  const arrStart = markerIdx + marker.length - 1; // posición del '['
+  let depth = 0;
+  let arrEnd = -1;
+  for (let i = arrStart; i < payload.length; i++) {
+    if (payload[i] === '[') depth++;
+    else if (payload[i] === ']') {
+      depth--;
+      if (depth === 0) { arrEnd = i; break; }
+    }
+  }
+  if (arrEnd === -1) return [];
+
+  try {
+    const arr = JSON.parse(payload.slice(arrStart, arrEnd + 1));
+    return arr.filter((item) => item.type === 'combination' && item.slug);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchOfficialNadeList(map, utilityType) {
   const url = `${CSNADES_BASE}/${map}/${utilityType}`;
   const res = await fetch(url);
@@ -121,7 +152,10 @@ export async function fetchOfficialNadeList(map, utilityType) {
   if (!chunks.length) return [];
 
   const payload = chunks.join('');
-  const nades = extractNadeObjects(payload);
+  const nades = [
+    ...extractNadeObjects(payload),
+    ...extractCombinationNades(payload),
+  ];
   console.log(`[FU] official ${map}/${utilityType}: ${nades.length} nades`);
   return nades.map((item) => parseOfficialItem(item, map, utilityType));
 }

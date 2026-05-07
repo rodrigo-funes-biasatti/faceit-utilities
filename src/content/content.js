@@ -108,19 +108,19 @@ function renderUtilities(map, data) {
   if (!content) return;
 
   const sides = ['T', 'CT'];
-  const types = ['smokes', 'flashbangs', 'molotovs', 'hegranades', 'combinations'];
+  const types = ['smokes', 'flashbangs', 'molotovs', 'hegrenades', 'combinations'];
   const typeLabels = {
     smokes: 'Smokes',
     flashbangs: 'Flashbangs',
     molotovs: 'Molotovs',
-    hegranades: 'HE Grenades',
+    hegrenades: 'HE Grenades',
     combinations: 'Combinations',
   };
   const typeIcons = {
     smokes:     chrome.runtime.getURL('icons/grenades/smokes.webp'),
     flashbangs: chrome.runtime.getURL('icons/grenades/flashbangs.webp'),
     molotovs:   chrome.runtime.getURL('icons/grenades/molotovs.webp'),
-    hegranades: chrome.runtime.getURL('icons/grenades/hegranades.webp'),
+    hegrenades: chrome.runtime.getURL('icons/grenades/hegrenades.webp'),
   };
 
   let html = '';

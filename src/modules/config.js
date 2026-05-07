@@ -25,7 +25,7 @@ export const MAP_ALIASES = {
   de_train: 'train',
 };
 
-export const UTILITY_TYPES = ['smokes', 'flashbangs', 'molotovs', 'hegranades', 'combinations'];
+export const UTILITY_TYPES = ['smokes', 'flashbangs', 'molotovs', 'hegrenades', 'combinations'];
 
 export const CSNADES_BASE = 'https://csnades.gg';
 
