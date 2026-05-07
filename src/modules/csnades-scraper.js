@@ -106,13 +106,15 @@ function extractNadeObjects(payload) {
 }
 
 // Combinations usan IDs numéricos ("14") en lugar de "nade_xxx", por lo que
-// extractNadeObjects no las detecta. Viven en el array "nades":[...] del payload.
+// extractNadeObjects no las detecta. Viven en el array "nades":[{...}] del payload.
+// Hay dos ocurrencias de "nades":[ — la primera es metadata resumida ([[id,side,...]]),
+// la segunda tiene los objetos completos. Buscamos "nades":[{ para ir directo a los objetos.
 function extractCombinationNades(payload) {
-  const marker = '"nades":[';
+  const marker = '"nades":[{';
   const markerIdx = payload.indexOf(marker);
   if (markerIdx === -1) return [];
 
-  const arrStart = markerIdx + marker.length - 1; // posición del '['
+  const arrStart = markerIdx + marker.length - 2; // posición del '['
   let depth = 0;
   let arrEnd = -1;
   for (let i = arrStart; i < payload.length; i++) {
