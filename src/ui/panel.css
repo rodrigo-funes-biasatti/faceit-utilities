@@ -74,6 +74,14 @@
   flex-shrink: 0;
 }
 
+#fu-map-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 #fu-map-name {
   font-weight: 600;
   color: #ffffff;

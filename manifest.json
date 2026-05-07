@@ -35,7 +35,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "icons/grenades/*"],
+      "resources": ["icons/*", "icons/grenades/*", "icons/maps/*"],
       "matches": ["https://www.faceit.com/*"]
     }
   ],

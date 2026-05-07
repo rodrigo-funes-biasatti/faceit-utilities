@@ -71,6 +71,7 @@ function injectPanel() {
     </button>
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">
+        <img id="fu-map-icon" class="fu-hidden" alt="" width="24" height="24"/>
         <span id="fu-map-name">Esperando mapa...</span>
         <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         <button id="fu-close" title="Cerrar">✕</button>
@@ -103,6 +104,13 @@ function showStatus(msg) {
 function renderUtilities(map, data) {
   const mapEl = document.getElementById('fu-map-name');
   if (mapEl) mapEl.textContent = MAP_DISPLAY[map] ?? map;
+
+  const mapIcon = document.getElementById('fu-map-icon');
+  if (mapIcon) {
+    mapIcon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
+    mapIcon.alt = MAP_DISPLAY[map] ?? map;
+    mapIcon.classList.remove('fu-hidden');
+  }
 
   const content = document.getElementById('fu-content');
   if (!content) return;
