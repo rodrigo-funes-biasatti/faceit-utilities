@@ -3,10 +3,9 @@
 // Se comunica con el service worker via chrome.runtime.sendMessage.
 
 // ─── Mock mode ────────────────────────────────────────────────────────────────
-// Activar para testear sin necesidad de una partida real.
-// Simula que se detectó el mapa "mirage" al entrar a cualquier sala de FACEIT.
+// Cambiar a enabled: true + map: 'mirage' para testear sin partida real.
 const MOCK = {
-  enabled: true,
+  enabled: false,
   map: 'mirage',
 };
 
@@ -137,7 +136,9 @@ function renderUtilities(map, data) {
             ${items
               .map(
                 (item) => `
-              <li class="fu-item" data-detail-url="${encodeURIComponent(item.detailUrl)}">
+              <li class="fu-item"
+                data-detail-url="${encodeURIComponent(item.detailUrl)}"
+                data-video-url="${encodeURIComponent(item.videoUrl ?? '')}">
                 <button class="fu-item-btn">${escapeHtml(item.name)}</button>
                 <div class="fu-video-wrap fu-hidden"></div>
               </li>`
@@ -165,14 +166,15 @@ function renderUtilities(map, data) {
   });
 }
 
-// ─── Lazy load del video ──────────────────────────────────────────────────────
-async function handleItemClick(e) {
+// ─── Video toggle ─────────────────────────────────────────────────────────────
+// El videoUrl ya viene en el dataset del item — no necesita fetch adicional.
+function handleItemClick(e) {
   const btn = e.currentTarget;
   const item = btn.closest('.fu-item');
   const wrap = item.querySelector('.fu-video-wrap');
   const detailUrl = decodeURIComponent(item.dataset.detailUrl);
+  const videoUrl = decodeURIComponent(item.dataset.videoUrl);
 
-  // Toggle: si ya está abierto, cerrar
   if (!wrap.classList.contains('fu-hidden')) {
     wrap.classList.add('fu-hidden');
     wrap.innerHTML = '';
@@ -180,16 +182,11 @@ async function handleItemClick(e) {
   }
 
   wrap.classList.remove('fu-hidden');
-  wrap.innerHTML = '<div class="fu-video-loading">Cargando video...</div>';
 
-  const res = await chrome.runtime.sendMessage({ type: 'FETCH_VIDEO', detailUrl });
-
-  if (!res?.ok || !res.videoUrl) {
+  if (!videoUrl) {
     wrap.innerHTML = `
       <div class="fu-video-fallback">
-        <a href="${escapeHtml(detailUrl)}" target="_blank" class="fu-watch-link">
-          ▶ Ver en csnades.gg
-        </a>
+        <a href="${escapeHtml(detailUrl)}" target="_blank" class="fu-watch-link">▶ Ver en csnades.gg</a>
       </div>`;
     return;
   }
@@ -197,7 +194,7 @@ async function handleItemClick(e) {
   wrap.innerHTML = `
     <div class="fu-video-inner">
       <iframe
-        src="${escapeHtml(res.videoUrl)}"
+        src="${escapeHtml(videoUrl)}"
         frameborder="0"
         allowfullscreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
