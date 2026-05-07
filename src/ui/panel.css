@@ -82,6 +82,10 @@
   flex-shrink: 0;
 }
 
+#fu-map-icon.fu-hidden {
+  display: none;
+}
+
 #fu-map-name {
   font-weight: 600;
   color: #ffffff;

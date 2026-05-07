@@ -336,6 +336,8 @@ async function onPageChange() {
   currentMap = null;
   const mapEl = document.getElementById('fu-map-name');
   if (mapEl) mapEl.textContent = 'Esperando mapa...';
+  const mapIcon = document.getElementById('fu-map-icon');
+  if (mapIcon) { mapIcon.src = ''; mapIcon.classList.add('fu-hidden'); }
 
   if (MOCK.enabled) {
     await loadForMap(MOCK.map);
