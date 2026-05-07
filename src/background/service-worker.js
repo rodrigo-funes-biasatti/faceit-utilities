@@ -21,6 +21,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     handleFetchUtilities(map, sendResponse);
     return true;
   }
+
+  if (message.type === 'FETCH_VIDEO') {
+    handleFetchVideo(message.url, sendResponse);
+    return true;
+  }
 });
 
 async function fetchAndMergeType(map, type) {
@@ -40,6 +45,26 @@ async function fetchAndMergeType(map, type) {
   const merged = [...communityItems, ...officialItems.filter((n) => !seen.has(n.slug))];
   console.log(`[FU] ${map}/${type}: ${communityItems.length} community + ${officialItems.length} official = ${merged.length} total`);
   return merged;
+}
+
+// El content script no puede hacer fetch cross-origin a assets.csnades.gg por CORS.
+// El service worker sí puede (tiene host_permissions sin restricción CORS).
+// Devuelve el ArrayBuffer para que el content script cree un blob URL.
+async function handleFetchVideo(url, sendResponse) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' || parsed.hostname !== 'assets.csnades.gg') {
+      sendResponse({ ok: false, error: 'URL no permitida' });
+      return;
+    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    const mime = res.headers.get('content-type') ?? 'video/mp4';
+    sendResponse({ ok: true, buffer, mime });
+  } catch (err) {
+    sendResponse({ ok: false, error: err.message });
+  }
 }
 
 async function handleFetchUtilities(map, sendResponse) {

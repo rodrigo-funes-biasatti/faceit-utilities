@@ -241,9 +241,11 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
   const loading = inner?.querySelector('.fu-video-loading');
 
   try {
-    const res = await fetch(videoUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
+    // El fetch se delega al service worker para evadir restricciones CORS del servidor.
+    const res = await chrome.runtime.sendMessage({ type: 'FETCH_VIDEO', url: videoUrl });
+    if (!res?.ok) throw new Error(res?.error ?? 'fetch failed');
+
+    const blob = new Blob([res.buffer], { type: res.mime });
     const blobUrl = URL.createObjectURL(blob);
 
     if (!inner || !wrap.isConnected) {
@@ -258,7 +260,8 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
     vid.dataset.blobUrl = blobUrl; // guardado para revocarlo al cerrar
     loading?.replaceWith(vid);
 
-  } catch {
+  } catch (err) {
+    console.error('[FU] fetchBlobVideo error:', err.message);
     if (!inner) return;
     const fallback = document.createElement('div');
     fallback.className = 'fu-video-fallback';
