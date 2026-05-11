@@ -12,19 +12,26 @@ const MOCK = {
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const CS2_MAP_NAMES = [
   'mirage', 'dust 2', 'dust2', 'inferno', 'nuke',
-  'ancient', 'anubis', 'vertigo', 'overpass', 'train',
+  'ancient', 'anubis', 'vertigo', 'overpass', 'train', 'cache', 'cobblestone',
 ];
 
 const MAP_DISPLAY = {
   mirage: 'Mirage', dust2: 'Dust 2', inferno: 'Inferno', nuke: 'Nuke',
   ancient: 'Ancient', anubis: 'Anubis', vertigo: 'Vertigo',
-  overpass: 'Overpass', train: 'Train',
+  overpass: 'Overpass', train: 'Train', cache: 'Cache', cobblestone: 'Cobblestone',
 };
+
+// Mapas reconocidos pero sin cobertura en csnades.gg todavía.
+const MAPS_UNSUPPORTED = new Set(['cache', 'cobblestone']);
 
 // ─── Estado ───────────────────────────────────────────────────────────────────
 let currentMap = null;
 let mapObserver = null;
 let browseMode = false;
+let favFilterActive = false;
+let compactMode = false;
+let restoringAccordions = false;
+let saveAccordionDebounce = null;
 
 // ─── Detección de navegación SPA ─────────────────────────────────────────────
 // Polling de URL cada 500ms. popstate cubre back/forward instantáneamente;
@@ -48,15 +55,40 @@ function normalizeMapName(raw) {
   return lower.replace(/\s+/g, '');
 }
 
+// Frases que indican que el veto/ban de mapa está en curso.
+// Cuando están presentes, todos los mapas aparecen como opciones en el DOM
+// y cualquier detección de nombre sería un falso positivo.
+const VOTING_PHRASES = [
+  'baneando un mapa', // es
+  'eligiendo un mapa', // es
+  'banning a map',    // en
+  'picking a map',    // en
+  'banindo um mapa',  // pt
+];
+
 function detectMapFromDOM() {
-  // Reads visible page text solely to detect which CS2 map name appears
-  // in the FACEIT match room UI (e.g. "Mirage", "Ancient").
-  // No page content is stored, transmitted, or used for any other purpose.
+  // Skips detection while map veto/ban is actively in progress (all maps appear as options).
   const text = document.body.innerText.toLowerCase();
+  if (VOTING_PHRASES.some((phrase) => text.includes(phrase))) return null;
+
+  // Count occurrences of each map name. The picked map appears in multiple
+  // places (banner, match header, pick entry), while banned maps appear only
+  // once in the veto history — so the highest count wins.
+  const scores = {};
   for (const name of CS2_MAP_NAMES) {
-    if (text.includes(name)) return normalizeMapName(name);
+    let count = 0;
+    let pos = 0;
+    while ((pos = text.indexOf(name, pos)) !== -1) { count++; pos += name.length; }
+    if (count > 0) {
+      const key = normalizeMapName(name);
+      scores[key] = (scores[key] ?? 0) + count;
+    }
   }
-  return null;
+
+  if (Object.keys(scores).length === 0) return null;
+  const best = Object.entries(scores).reduce((a, b) => b[1] > a[1] ? b : a);
+  console.log('[FU] map scores:', scores, '→', best[0]);
+  return best[0];
 }
 
 // ─── Inyección del panel ──────────────────────────────────────────────────────
@@ -69,6 +101,7 @@ function injectPanel() {
   root.innerHTML = `
     <button id="fu-toggle" title="FACEIT Utilities">
       <img src="${chrome.runtime.getURL('icons/icon32.png')}" width="22" height="22" alt="FACEIT Utilities"/>
+      <span id="fu-toggle-badge" class="fu-hidden"></span>
     </button>
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">
@@ -76,6 +109,8 @@ function injectPanel() {
           <option value="">— Elegir mapa —</option>
           <option value="ancient">Ancient</option>
           <option value="anubis">Anubis</option>
+          <option value="cache">Cache</option>
+          <option value="cobblestone">Cobblestone</option>
           <option value="dust2">Dust 2</option>
           <option value="inferno">Inferno</option>
           <option value="mirage">Mirage</option>
@@ -86,11 +121,15 @@ function injectPanel() {
         </select>
         <img id="fu-map-icon" class="fu-hidden" alt="" width="24" height="24"/>
         <span id="fu-map-name">Esperando mapa...</span>
+        <span id="fu-progress" class="fu-hidden" title="Latas aprendidas"></span>
         <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         <button id="fu-close" title="Cerrar">✕</button>
       </div>
       <div id="fu-search-bar" class="fu-hidden">
         <input id="fu-search" type="text" placeholder="Buscar lata..." autocomplete="off" spellcheck="false"/>
+        <button id="fu-fav-filter" data-tooltip="Solo favoritos"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+        <button id="fu-compact-toggle" data-tooltip="Modo compacto"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="3" x2="14" y2="3"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="2" y1="11" x2="14" y2="11"/><line x1="2" y1="15" x2="14" y2="15"/></svg></button>
+        <button id="fu-collapse-all" data-tooltip="Colapsar todo"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,10 8,5 13,10"/><polyline points="3,14 8,9 13,14"/></svg></button>
       </div>
       <div id="fu-content">
         <div class="fu-status">Esperando sala de FACEIT...</div>
@@ -102,6 +141,25 @@ function injectPanel() {
   document.getElementById('fu-toggle').addEventListener('click', togglePanel);
   document.getElementById('fu-close').addEventListener('click', closePanel);
   document.getElementById('fu-search').addEventListener('input', (e) => filterNades(e.target.value));
+  document.getElementById('fu-fav-filter').addEventListener('click', () => {
+    favFilterActive = !favFilterActive;
+    document.getElementById('fu-fav-filter').classList.toggle('fu-active', favFilterActive);
+    filterNades(document.getElementById('fu-search')?.value ?? '');
+  });
+  document.getElementById('fu-compact-toggle').addEventListener('click', toggleCompactMode);
+  document.getElementById('fu-collapse-all').addEventListener('click', () => {
+    const input = document.getElementById('fu-search');
+    if (input) input.value = '';
+    document.querySelectorAll('#fu-content .fu-accordion').forEach((a) => {
+      a.open = false;
+      a.style.display = '';
+    });
+    document.querySelectorAll('#fu-content .fu-item, #fu-content .fu-side-block').forEach((el) => {
+      el.style.display = '';
+    });
+    document.querySelector('#fu-content .fu-no-results')?.remove();
+  });
+  initCompactMode();
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
     if (!map) {
@@ -128,6 +186,10 @@ function showStatus(msg) {
   document.getElementById('fu-search-bar')?.classList.add('fu-hidden');
   const input = document.getElementById('fu-search');
   if (input) input.value = '';
+  favFilterActive = false;
+  document.getElementById('fu-fav-filter')?.classList.remove('fu-active');
+  document.getElementById('fu-progress')?.classList.add('fu-hidden');
+  document.getElementById('fu-toggle-badge')?.classList.add('fu-hidden');
 }
 
 // ─── Render de utilidades ─────────────────────────────────────────────────────
@@ -151,10 +213,11 @@ function renderUtilities(map, data) {
     combinations: 'Combinations',
   };
   const typeIcons = {
-    smokes:     chrome.runtime.getURL('icons/grenades/smokes.webp'),
-    flashbangs: chrome.runtime.getURL('icons/grenades/flashbangs.webp'),
-    molotovs:   chrome.runtime.getURL('icons/grenades/molotovs.webp'),
-    hegrenades: chrome.runtime.getURL('icons/grenades/hegrenades.webp'),
+    smokes:       chrome.runtime.getURL('icons/grenades/smokes.webp'),
+    flashbangs:   chrome.runtime.getURL('icons/grenades/flashbangs.webp'),
+    molotovs:     chrome.runtime.getURL('icons/grenades/molotovs.webp'),
+    hegrenades:   chrome.runtime.getURL('icons/grenades/hegrenades.webp'),
+    combinations: chrome.runtime.getURL('icons/grenades/combinations.png'),
   };
 
   let html = '';
@@ -170,7 +233,7 @@ function renderUtilities(map, data) {
 
       const iconUrl = typeIcons[type];
       sideHtml += `
-        <details class="fu-accordion">
+        <details class="fu-accordion" data-key="${side.toLowerCase()}-${type}">
           <summary class="fu-accordion-summary">
             ${iconUrl
               ? `<img src="${iconUrl}" class="fu-util-icon" alt="${typeLabels[type]}" width="18" height="18"/>`
@@ -183,9 +246,19 @@ function renderUtilities(map, data) {
               .map(
                 (item) => `
               <li class="fu-item"
+                data-slug="${escapeHtml(item.slug)}"
                 data-detail-url="${encodeURIComponent(item.detailUrl)}"
                 data-video-url="${encodeURIComponent(item.videoUrl ?? '')}">
-                <button class="fu-item-btn">${escapeHtml(item.name)}</button>
+                <div class="fu-item-main">
+                  <button class="fu-item-btn">
+                    <span class="fu-item-name">${escapeHtml(item.name)}</span>
+                    ${item.thumbnailUrl ? `<img class="fu-item-thumb" src="${escapeHtml(item.thumbnailUrl)}" loading="lazy" alt=""/>` : ''}
+                  </button>
+                  <div class="fu-item-actions">
+                    <button class="fu-fav-btn" data-tooltip="Favorito" aria-label="Favorito">☆</button>
+                    <button class="fu-learned-btn" data-tooltip="Aprendida" aria-label="Aprendida">○</button>
+                  </div>
+                </div>
                 <div class="fu-video-wrap fu-hidden"></div>
               </li>`
               )
@@ -210,8 +283,19 @@ function renderUtilities(map, data) {
   content.querySelectorAll('.fu-item-btn').forEach((btn) => {
     btn.addEventListener('click', handleItemClick);
   });
+  content.querySelectorAll('.fu-fav-btn').forEach((btn) => {
+    btn.addEventListener('click', handleFavClick);
+  });
+  content.querySelectorAll('.fu-learned-btn').forEach((btn) => {
+    btn.addEventListener('click', handleLearnedClick);
+  });
+
+  content.querySelectorAll('.fu-accordion').forEach((accordion) => {
+    accordion.addEventListener('toggle', debouncedSaveAccordionState);
+  });
 
   document.getElementById('fu-search-bar')?.classList.remove('fu-hidden');
+  applyUserData(map);
 }
 
 // ─── Video toggle ─────────────────────────────────────────────────────────────
@@ -332,8 +416,19 @@ async function loadForMap(map) {
   currentMap = map;
   injectPanel();
 
-  // Abre el panel automáticamente cuando se detecta el mapa
   document.getElementById('fu-panel')?.classList.remove('fu-hidden');
+
+  if (MAPS_UNSUPPORTED.has(map)) {
+    const name = MAP_DISPLAY[map] ?? map;
+    setMapIcon(map);
+    if (!browseMode) {
+      const mapEl = document.getElementById('fu-map-name');
+      if (mapEl) mapEl.textContent = name;
+    }
+    showStatus(`${name} aún no está disponible en csnades.gg. ¡Próximamente!`);
+    return;
+  }
+
   showStatus('Cargando utilidades...');
 
   const res = await chrome.runtime.sendMessage({ type: 'FETCH_UTILITIES', map });
@@ -377,7 +472,8 @@ async function onPageChange() {
   // ── Modo sala ──────────────────────────────────────────────────────────────
   browseMode = false;
   // Ocultar select y restaurar nombre/ícono
-  document.getElementById('fu-map-select')?.classList.add('fu-hidden');
+  const sel = document.getElementById('fu-map-select');
+  if (sel) { sel.value = ''; sel.classList.add('fu-hidden'); }
   document.getElementById('fu-map-name')?.classList.remove('fu-hidden');
 
   // Resetear estado del lobby anterior ANTES de detectar, para que el nombre del mapa
@@ -408,7 +504,185 @@ async function onPageChange() {
   await checkFn();
 }
 
+// ─── Compact mode ─────────────────────────────────────────────────────────────
+async function initCompactMode() {
+  const result = await chrome.storage.local.get('fu_compact_mode');
+  compactMode = result.fu_compact_mode ?? false;
+  applyCompactMode();
+}
+
+function applyCompactMode() {
+  document.getElementById('fu-panel')?.classList.toggle('fu-compact', compactMode);
+  document.getElementById('fu-compact-toggle')?.classList.toggle('fu-active', compactMode);
+}
+
+async function toggleCompactMode() {
+  compactMode = !compactMode;
+  await chrome.storage.local.set({ fu_compact_mode: compactMode });
+  applyCompactMode();
+}
+
+// ─── Memoria de acordeones ────────────────────────────────────────────────────
+function debouncedSaveAccordionState() {
+  if (restoringAccordions) return;
+  clearTimeout(saveAccordionDebounce);
+  saveAccordionDebounce = setTimeout(() => saveAccordionState(currentMap), 400);
+}
+
+async function saveAccordionState(map) {
+  if (!map) return;
+  const state = {};
+  document.querySelectorAll('.fu-accordion[data-key]').forEach((accordion) => {
+    state[accordion.dataset.key] = accordion.open;
+  });
+  const result = await chrome.storage.local.get('fu_accordion_state');
+  const allStates = result.fu_accordion_state ?? {};
+  allStates[map] = state;
+  await chrome.storage.local.set({ fu_accordion_state: allStates });
+}
+
+async function restoreAccordionState(map) {
+  if (!map) return;
+  const result = await chrome.storage.local.get('fu_accordion_state');
+  const state = (result.fu_accordion_state ?? {})[map];
+  if (!state) return;
+  restoringAccordions = true;
+  document.querySelectorAll('.fu-accordion[data-key]').forEach((accordion) => {
+    if (accordion.dataset.key in state) accordion.open = state[accordion.dataset.key];
+  });
+  restoringAccordions = false;
+}
+
+// ─── Favoritos y Aprendidas ───────────────────────────────────────────────────
+async function loadUserData() {
+  const result = await chrome.storage.local.get(['fu_favorites', 'fu_learned']);
+  return {
+    favorites: result.fu_favorites ?? {},
+    learned: result.fu_learned ?? {},
+  };
+}
+
+async function applyUserData(map) {
+  const { favorites, learned } = await loadUserData();
+  const mapFavs = new Set(favorites[map] ?? []);
+  const mapLearned = new Set(learned[map] ?? []);
+
+  document.querySelectorAll('.fu-item').forEach((item) => {
+    const { slug } = item.dataset;
+    const favBtn = item.querySelector('.fu-fav-btn');
+    const learnedBtn = item.querySelector('.fu-learned-btn');
+    const actions = item.querySelector('.fu-item-actions');
+
+    const isFav = mapFavs.has(slug);
+    const isLearned = mapLearned.has(slug);
+
+    if (favBtn) {
+      favBtn.textContent = isFav ? '★' : '☆';
+      favBtn.classList.toggle('fu-active', isFav);
+    }
+    if (learnedBtn) {
+      learnedBtn.textContent = isLearned ? '✓' : '○';
+      learnedBtn.classList.toggle('fu-active', isLearned);
+    }
+    actions?.classList.toggle('fu-has-active', isFav || isLearned);
+    item.classList.toggle('fu-learned', isLearned);
+  });
+
+  document.querySelectorAll('.fu-list').forEach(sortListByFavorites);
+  await restoreAccordionState(map);
+  updateProgress();
+  updateToggleBadge(map);
+}
+
+function updateToggleBadge(map) {
+  if (!map) {
+    document.getElementById('fu-toggle-badge')?.classList.add('fu-hidden');
+    return;
+  }
+  chrome.storage.local.get('fu_favorites', (result) => {
+    const count = ((result.fu_favorites ?? {})[map] ?? []).length;
+    const badge = document.getElementById('fu-toggle-badge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.classList.remove('fu-hidden');
+    } else {
+      badge.classList.add('fu-hidden');
+    }
+  });
+}
+
+function sortListByFavorites(list) {
+  const items = [...list.querySelectorAll(':scope > .fu-item')];
+  const favs = items.filter((item) => item.querySelector('.fu-fav-btn')?.classList.contains('fu-active'));
+  const rest = items.filter((item) => !item.querySelector('.fu-fav-btn')?.classList.contains('fu-active'));
+  [...favs, ...rest].forEach((item) => list.appendChild(item));
+}
+
+async function handleFavClick(e) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const item = btn.closest('.fu-item');
+  const { slug } = item.dataset;
+  const map = currentMap || document.getElementById('fu-map-select')?.value;
+  if (!map || !slug) return;
+
+  const data = await chrome.storage.local.get('fu_favorites');
+  const favs = data.fu_favorites ?? {};
+  const mapFavs = favs[map] ?? [];
+  const idx = mapFavs.indexOf(slug);
+  if (idx === -1) mapFavs.push(slug); else mapFavs.splice(idx, 1);
+  favs[map] = mapFavs;
+  await chrome.storage.local.set({ fu_favorites: favs });
+
+  const isFav = idx === -1;
+  btn.textContent = isFav ? '★' : '☆';
+  btn.classList.toggle('fu-active', isFav);
+  const learnedActive = item.querySelector('.fu-learned-btn')?.classList.contains('fu-active') ?? false;
+  item.querySelector('.fu-item-actions')?.classList.toggle('fu-has-active', isFav || learnedActive);
+
+  const list = item.closest('.fu-list');
+  if (list) sortListByFavorites(list);
+  updateToggleBadge(map);
+}
+
+async function handleLearnedClick(e) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const item = btn.closest('.fu-item');
+  const { slug } = item.dataset;
+  const map = currentMap || document.getElementById('fu-map-select')?.value;
+  if (!map || !slug) return;
+
+  const data = await chrome.storage.local.get('fu_learned');
+  const learned = data.fu_learned ?? {};
+  const mapLearned = learned[map] ?? [];
+  const idx = mapLearned.indexOf(slug);
+  if (idx === -1) mapLearned.push(slug); else mapLearned.splice(idx, 1);
+  learned[map] = mapLearned;
+  await chrome.storage.local.set({ fu_learned: learned });
+
+  const isLearned = idx === -1;
+  btn.textContent = isLearned ? '✓' : '○';
+  btn.classList.toggle('fu-active', isLearned);
+  const favActive = item.querySelector('.fu-fav-btn')?.classList.contains('fu-active') ?? false;
+  item.querySelector('.fu-item-actions')?.classList.toggle('fu-has-active', isLearned || favActive);
+  item.classList.toggle('fu-learned', isLearned);
+  updateProgress();
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const el = document.getElementById('fu-progress');
+  if (!el) return;
+  const allItems = document.querySelectorAll('#fu-content .fu-item');
+  const total = allItems.length;
+  if (total === 0) { el.classList.add('fu-hidden'); return; }
+  const learned = [...allItems].filter((item) => item.classList.contains('fu-learned')).length;
+  el.textContent = `${learned}/${total}`;
+  el.classList.remove('fu-hidden');
+}
+
 function filterNades(query) {
   const q = query.toLowerCase().trim();
   let totalVisible = 0;
@@ -420,15 +694,16 @@ function filterNades(query) {
       let accordionVisible = 0;
 
       accordion.querySelectorAll('.fu-item').forEach((item) => {
-        const name = item.querySelector('.fu-item-btn')?.textContent.toLowerCase() ?? '';
-        const match = !q || name.includes(q);
+        const name = item.querySelector('.fu-item-name')?.textContent.toLowerCase() ?? '';
+        const isFav = item.querySelector('.fu-fav-btn')?.classList.contains('fu-active') ?? false;
+        const match = (!q || name.includes(q)) && (!favFilterActive || isFav);
         item.style.display = match ? '' : 'none';
         if (match) accordionVisible++;
       });
 
       accordion.style.display = accordionVisible ? '' : 'none';
       if (accordionVisible) {
-        accordion.open = !!q; // abrir si hay query, cerrar si se borró
+        if (q) accordion.open = true;
         sideVisible += accordionVisible;
       }
     });
@@ -455,6 +730,7 @@ function setMapIcon(map) {
   const icon = document.getElementById('fu-map-icon');
   if (!icon) return;
   if (map) {
+    icon.onerror = () => icon.classList.add('fu-hidden');
     icon.src = chrome.runtime.getURL(`icons/maps/${map}.webp`);
     icon.alt = MAP_DISPLAY[map] ?? map;
     icon.classList.remove('fu-hidden');

@@ -27,6 +27,12 @@ export const Cache = {
   },
 
   async clear() {
-    return new Promise((resolve) => chrome.storage.local.clear(resolve));
+    return new Promise((resolve) => {
+      chrome.storage.local.get(null, (all) => {
+        const cacheKeys = Object.keys(all).filter((k) => k.startsWith('utilities_'));
+        if (cacheKeys.length === 0) return resolve();
+        chrome.storage.local.remove(cacheKeys, resolve);
+      });
+    });
   },
 };

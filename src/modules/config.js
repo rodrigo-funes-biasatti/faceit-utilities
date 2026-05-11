@@ -9,6 +9,8 @@ export const MAPS = {
   vertigo: 'Vertigo',
   overpass: 'Overpass',
   train: 'Train',
+  cache: 'Cache',
+  cobblestone: 'Cobblestone',
 };
 
 // FACEIT a veces muestra los mapas como "de_mirage" (formato Source engine)

@@ -23,17 +23,20 @@ function buildYoutubeUrl(video) {
 }
 
 function parseCommunityItem(item, map, utilityType) {
+  const ytId = item.video?.youtubeId ?? null;
   return {
     name: `${item.titleTo} from ${item.titleFrom}`,
     slug: item.slug,
     side: normalizeSide(item.team),
     videoUrl: buildYoutubeUrl(item.video),
+    thumbnailUrl: ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null,
     detailUrl: `${CSNADES_BASE}/${map}/${utilityType}/${item.slug}`,
   };
 }
 
 function parseOfficialItem(item, map, utilityType) {
   const videoUrl = item.assets?.videoHq?.mp4 ?? item.assets?.videoLq?.webm ?? null;
+  const thumbnailUrl = item.assets?.thumbnail?.jpg ?? item.assets?.thumbnail?.webp ?? null;
   // Combinations don't have titleTo/titleFrom — derive name from slug
   const name = (item.titleTo && item.titleFrom)
     ? `${item.titleTo} from ${item.titleFrom}`
@@ -43,6 +46,7 @@ function parseOfficialItem(item, map, utilityType) {
     slug: item.slug,
     side: normalizeSide(item.team),
     videoUrl,
+    thumbnailUrl,
     detailUrl: `${CSNADES_BASE}/${map}/${utilityType}/${item.slug}`,
   };
 }
