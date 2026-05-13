@@ -357,6 +357,44 @@
   border-radius: 2px;
 }
 
+/* Skeleton de carga */
+@keyframes fu-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.fu-skeleton-block {
+  background: linear-gradient(90deg, #1a1a32 25%, #22223e 50%, #1a1a32 75%);
+  background-size: 200% 100%;
+  animation: fu-shimmer 1.4s infinite;
+  border-radius: 3px;
+}
+
+.fu-skeleton-group {
+  border-bottom: 1px solid #1a1a32;
+  padding-bottom: 4px;
+}
+
+.fu-skeleton-header {
+  height: 12px;
+  width: 38%;
+  margin: 10px 12px 6px 28px;
+}
+
+.fu-skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 28px;
+  border-bottom: 1px solid #0d0d22;
+}
+
+.fu-skeleton-line {
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 /* Mensajes de estado */
 .fu-status {
   padding: 24px 16px;

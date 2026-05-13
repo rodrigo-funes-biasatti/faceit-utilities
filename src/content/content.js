@@ -197,6 +197,24 @@ function showStatus(msg) {
   document.getElementById('fu-toggle-badge')?.classList.add('fu-hidden');
 }
 
+function showLoadingSkeleton() {
+  const el = document.getElementById('fu-content');
+  if (!el) return;
+  const item = (w) => `
+    <div class="fu-skeleton-item">
+      <div class="fu-skeleton-block fu-skeleton-line" style="width:${w}%"></div>
+    </div>`;
+  const group = `
+    <div class="fu-skeleton-group">
+      <div class="fu-skeleton-block fu-skeleton-header"></div>
+      ${item(60)}${item(45)}${item(70)}${item(38)}
+    </div>`;
+  el.innerHTML = group + group;
+  document.getElementById('fu-search-bar')?.classList.add('fu-hidden');
+  document.getElementById('fu-progress')?.classList.add('fu-hidden');
+  document.getElementById('fu-toggle-badge')?.classList.add('fu-hidden');
+}
+
 // ─── Render de utilidades ─────────────────────────────────────────────────────
 function renderUtilities(map, data) {
   setMapIcon(map);
@@ -443,7 +461,7 @@ async function loadForMap(map) {
     return;
   }
 
-  showStatus('Cargando utilidades...');
+  showLoadingSkeleton();
 
   const res = await chrome.runtime.sendMessage({ type: 'FETCH_UTILITIES', map });
 
