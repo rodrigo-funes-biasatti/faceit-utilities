@@ -576,8 +576,23 @@
   color: #44dd88;
 }
 
+.fu-item.fu-learned {
+  border-left: 2px solid rgba(68, 221, 136, 0.3);
+}
+
+.fu-item.fu-learned .fu-item-btn {
+  padding-left: 26px;
+  background: rgba(68, 221, 136, 0.03);
+}
+
+#fu-panel.fu-compact .fu-item.fu-learned .fu-item-btn {
+  padding-left: 20px;
+}
+
 .fu-item.fu-learned .fu-item-name {
-  opacity: 0.45;
+  opacity: 0.38;
+  text-decoration: line-through;
+  text-decoration-color: rgba(68, 221, 136, 0.4);
 }
 
 .fu-item-name {
