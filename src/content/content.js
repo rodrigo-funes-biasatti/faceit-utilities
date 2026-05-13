@@ -848,8 +848,10 @@ function handlePanelKeydown(e) {
   const panel = document.getElementById('fu-panel');
   const isTyping = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName);
 
-  // Alt+G — toggle panel desde cualquier lugar
-  if (e.altKey && (e.key === 'g' || e.key === 'G')) {
+  // Alt+G / ⌥G — toggle panel desde cualquier lugar
+  // e.code ('KeyG') identifica la tecla física y funciona en Mac y Windows
+  // independientemente del carácter generado (Option+G produce © en Mac)
+  if (e.altKey && e.code === 'KeyG') {
     e.preventDefault();
     panel?.classList.toggle('fu-hidden');
     return;
