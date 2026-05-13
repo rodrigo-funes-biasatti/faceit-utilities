@@ -791,12 +791,10 @@ details.fu-accordion[open]::details-content {
 }
 
 #fu-footer::before {
-  content: '';
+  content: '♥';
   position: absolute;
-  width: 28px;
-  height: 2px;
-  background: #252545;
-  border-radius: 1px;
+  font-size: 10px;
+  color: #333;
   transition: opacity 0.15s;
 }
 
