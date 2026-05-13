@@ -1,2 +1,16 @@
+# macOS
 .DS_Store
+.AppleDouble
+__MACOSX/
+
+# Editors
+.vscode/
+.idea/
+*.suo
+*.swp
+
+# Logs
 *.log
+
+# Builds (ZIPs generados por release.sh — no van en el repo)
+builds/
