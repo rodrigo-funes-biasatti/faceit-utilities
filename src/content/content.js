@@ -134,17 +134,7 @@ function injectPanel() {
         <button id="fu-fav-filter" data-tooltip="Solo favoritos"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
         <button id="fu-compact-toggle" data-tooltip="Modo compacto"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="3" x2="14" y2="3"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="2" y1="11" x2="14" y2="11"/><line x1="2" y1="15" x2="14" y2="15"/></svg></button>
         <button id="fu-collapse-all" data-tooltip="Colapsar todo"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,10 8,5 13,10"/><polyline points="3,14 8,9 13,14"/></svg></button>
-        <button id="fu-shortcuts-btn">?
-          <div id="fu-shortcuts-tooltip">
-            <div class="fu-sc-title">Atajos de teclado</div>
-            <div class="fu-sc-row"><kbd>Alt+G</kbd><span>Abrir / cerrar panel</span></div>
-            <div class="fu-sc-row"><kbd>Esc</kbd><span>Cerrar video o panel</span></div>
-            <div class="fu-sc-row"><kbd>F</kbd><span>Buscar</span></div>
-            <div class="fu-sc-row"><kbd>S</kbd><span>Filtrar favoritos</span></div>
-            <div class="fu-sc-row"><kbd>C</kbd><span>Modo compacto</span></div>
-            <div class="fu-sc-row"><kbd>↑ ↓</kbd><span>Navegar items</span></div>
-          </div>
-        </button>
+        <button id="fu-shortcuts-btn">?</button>
       </div>
       <div id="fu-content">
         <div class="fu-status">Esperando sala de FACEIT...</div>
@@ -182,6 +172,32 @@ function injectPanel() {
     document.querySelector('#fu-content .fu-no-results')?.remove();
   });
   document.addEventListener('keydown', handlePanelKeydown);
+
+  // Tooltip de atajos — en document.body con position:fixed para escapar del overflow:hidden del panel
+  const shortcutsTooltip = document.createElement('div');
+  shortcutsTooltip.id = 'fu-shortcuts-tooltip';
+  shortcutsTooltip.innerHTML = `
+    <div class="fu-sc-title">Atajos de teclado</div>
+    <div class="fu-sc-row"><kbd>Alt+G</kbd><span>Abrir / cerrar panel</span></div>
+    <div class="fu-sc-row"><kbd>Esc</kbd><span>Cerrar video o panel</span></div>
+    <div class="fu-sc-row"><kbd>F</kbd><span>Buscar</span></div>
+    <div class="fu-sc-row"><kbd>S</kbd><span>Filtrar favoritos</span></div>
+    <div class="fu-sc-row"><kbd>C</kbd><span>Modo compacto</span></div>
+    <div class="fu-sc-row"><kbd>↑ ↓</kbd><span>Navegar items</span></div>
+  `;
+  document.body.appendChild(shortcutsTooltip);
+
+  const shortcutsBtn = document.getElementById('fu-shortcuts-btn');
+  shortcutsBtn.addEventListener('mouseenter', () => {
+    const rect = shortcutsBtn.getBoundingClientRect();
+    shortcutsTooltip.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+    shortcutsTooltip.style.right = `${window.innerWidth - rect.right}px`;
+    shortcutsTooltip.style.opacity = '1';
+  });
+  shortcutsBtn.addEventListener('mouseleave', () => {
+    shortcutsTooltip.style.opacity = '0';
+  });
+
   initCompactMode();
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
