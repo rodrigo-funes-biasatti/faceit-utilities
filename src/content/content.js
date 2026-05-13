@@ -134,6 +134,11 @@ function injectPanel() {
       <div id="fu-content">
         <div class="fu-status">Esperando sala de FACEIT...</div>
       </div>
+      <div id="fu-footer">
+        <a href="https://paypal.me/rodritest" target="_blank" rel="noopener noreferrer" id="fu-donate">
+          ♥ Invitame un café
+        </a>
+      </div>
     </div>
   `;
 
@@ -674,13 +679,20 @@ async function handleLearnedClick(e) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function updateProgress() {
   const el = document.getElementById('fu-progress');
+  const header = document.getElementById('fu-header');
   if (!el) return;
   const allItems = document.querySelectorAll('#fu-content .fu-item');
   const total = allItems.length;
-  if (total === 0) { el.classList.add('fu-hidden'); return; }
+  if (total === 0) {
+    el.classList.add('fu-hidden');
+    header?.style.setProperty('--fu-progress-pct', '0%');
+    return;
+  }
   const learned = [...allItems].filter((item) => item.classList.contains('fu-learned')).length;
   el.textContent = `${learned}/${total}`;
   el.classList.remove('fu-hidden');
+  const pct = Math.round((learned / total) * 100);
+  header?.style.setProperty('--fu-progress-pct', `${pct}%`);
 }
 
 function filterNades(query) {

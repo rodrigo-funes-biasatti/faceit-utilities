@@ -90,6 +90,19 @@
   background: #0f0f22;
   border-bottom: 1px solid #252545;
   flex-shrink: 0;
+  position: relative;
+}
+
+#fu-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: var(--fu-progress-pct, 0%);
+  background: linear-gradient(90deg, #44dd88, #3fa8ff);
+  transition: width 0.4s ease;
+  pointer-events: none;
 }
 
 #fu-map-select {
