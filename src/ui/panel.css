@@ -345,6 +345,7 @@
 
 /* Área de contenido scrolleable */
 #fu-content {
+  interpolate-size: allow-keywords;
   overflow-y: auto;
   flex: 1;
   scrollbar-width: thin;
@@ -436,6 +437,16 @@
 /* Acordeón por tipo de utility */
 .fu-accordion {
   border-bottom: 1px solid #1a1a32;
+}
+
+details.fu-accordion::details-content {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.22s ease, content-visibility 0.22s ease allow-discrete;
+}
+
+details.fu-accordion[open]::details-content {
+  height: auto;
 }
 
 .fu-accordion[open] .fu-accordion-summary {
