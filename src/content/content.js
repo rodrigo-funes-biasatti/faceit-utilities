@@ -105,25 +105,29 @@ function injectPanel() {
     </button>
     <div id="fu-panel" class="fu-hidden">
       <div id="fu-header">
-        <select id="fu-map-select" class="fu-hidden">
-          <option value="">— Elegir mapa —</option>
-          <option value="ancient">Ancient</option>
-          <option value="anubis">Anubis</option>
-          <option value="cache">Cache</option>
-          <option value="cobblestone">Cobblestone</option>
-          <option value="dust2">Dust 2</option>
-          <option value="inferno">Inferno</option>
-          <option value="mirage">Mirage</option>
-          <option value="nuke">Nuke</option>
-          <option value="overpass">Overpass</option>
-          <option value="train">Train</option>
-          <option value="vertigo">Vertigo</option>
-        </select>
-        <img id="fu-map-icon" class="fu-hidden" alt="" width="24" height="24"/>
-        <span id="fu-map-name">Esperando mapa...</span>
-        <span id="fu-progress" class="fu-hidden" title="Latas aprendidas"></span>
-        <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
-        <button id="fu-close" title="Cerrar">✕</button>
+        <div class="fu-header-row1">
+          <img id="fu-map-icon" class="fu-hidden" alt="" width="24" height="24"/>
+          <select id="fu-map-select" class="fu-hidden">
+            <option value="">— Elegir mapa —</option>
+            <option value="ancient">Ancient</option>
+            <option value="anubis">Anubis</option>
+            <option value="cache">Cache</option>
+            <option value="cobblestone">Cobblestone</option>
+            <option value="dust2">Dust 2</option>
+            <option value="inferno">Inferno</option>
+            <option value="mirage">Mirage</option>
+            <option value="nuke">Nuke</option>
+            <option value="overpass">Overpass</option>
+            <option value="train">Train</option>
+            <option value="vertigo">Vertigo</option>
+          </select>
+          <span id="fu-map-name">Esperando mapa...</span>
+          <button id="fu-close" title="Cerrar">✕</button>
+        </div>
+        <div class="fu-header-row2">
+          <span id="fu-progress" class="fu-hidden" title="Latas aprendidas"></span>
+          <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
+        </div>
       </div>
       <div id="fu-search-bar" class="fu-hidden">
         <input id="fu-search" type="text" placeholder="Buscar lata..." autocomplete="off" spellcheck="false"/>
