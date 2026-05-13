@@ -174,11 +174,14 @@ function injectPanel() {
   document.addEventListener('keydown', handlePanelKeydown);
 
   // Tooltip de atajos — en document.body con position:fixed para escapar del overflow:hidden del panel
+  const isMac = /mac/i.test(navigator.platform || navigator.userAgentData?.platform || '');
+  const altKey = isMac ? '⌥G' : 'Alt+G';
+
   const shortcutsTooltip = document.createElement('div');
   shortcutsTooltip.id = 'fu-shortcuts-tooltip';
   shortcutsTooltip.innerHTML = `
     <div class="fu-sc-title">Atajos de teclado</div>
-    <div class="fu-sc-row"><kbd>Alt+G</kbd><span>Abrir / cerrar panel</span></div>
+    <div class="fu-sc-row"><kbd>${altKey}</kbd><span>Abrir / cerrar panel</span></div>
     <div class="fu-sc-row"><kbd>Esc</kbd><span>Cerrar video o panel</span></div>
     <div class="fu-sc-row"><kbd>F</kbd><span>Buscar</span></div>
     <div class="fu-sc-row"><kbd>S</kbd><span>Filtrar favoritos</span></div>
