@@ -142,6 +142,8 @@ function injectPanel() {
         <a href="https://paypal.me/rodritest" target="_blank" rel="noopener noreferrer" id="fu-donate">
           ♥ Invitame un café
         </a>
+        <span class="fu-footer-sep">—</span>
+        <a href="https://www.instagram.com/rodritest" target="_blank" rel="noopener noreferrer" id="fu-author">by @rodritest</a>
       </div>
     </div>
   `;
