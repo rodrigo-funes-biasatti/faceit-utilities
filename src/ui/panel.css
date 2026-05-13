@@ -625,18 +625,24 @@
 
 /* Contenedor del video (lazy loaded) */
 .fu-video-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
   background: #0a0a1c;
-  padding: 8px;
+  overflow: hidden;
 }
 
-.fu-video-wrap.fu-hidden {
-  display: none;
+.fu-video-wrap:not(.fu-hidden) {
+  grid-template-rows: 1fr;
 }
 
 .fu-video-inner {
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px;
 }
 
 .fu-video-inner iframe,

@@ -320,7 +320,8 @@ function handleItemClick(e) {
       URL.revokeObjectURL(v.dataset.blobUrl);
     });
     wrap.classList.add('fu-hidden');
-    wrap.innerHTML = '';
+    // Limpiar contenido después de que termine la transición de colapso
+    wrap.addEventListener('transitionend', () => { wrap.innerHTML = ''; }, { once: true });
     return;
   }
 
