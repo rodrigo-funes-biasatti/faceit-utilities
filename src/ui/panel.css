@@ -473,6 +473,19 @@
   background: #1a1a32;
 }
 
+/* Línea de color por tipo de grenade en el borde izquierdo del acordeón */
+.fu-accordion[data-key*="smokes"]       { border-left: 2px solid rgba(170, 170, 170, 0.35); }
+.fu-accordion[data-key*="flashbangs"]   { border-left: 2px solid rgba(255, 255, 100, 0.35); }
+.fu-accordion[data-key*="molotovs"]     { border-left: 2px solid rgba(255, 102, 51,  0.35); }
+.fu-accordion[data-key*="hegrenades"]   { border-left: 2px solid rgba(68,  221, 136, 0.35); }
+.fu-accordion[data-key*="combinations"] { border-left: 2px solid rgba(170, 136, 255, 0.35); }
+
+.fu-accordion[open][data-key*="smokes"]       { border-left-color: rgba(170, 170, 170, 0.7); }
+.fu-accordion[open][data-key*="flashbangs"]   { border-left-color: rgba(255, 255, 100, 0.7); }
+.fu-accordion[open][data-key*="molotovs"]     { border-left-color: rgba(255, 102, 51,  0.7); }
+.fu-accordion[open][data-key*="hegrenades"]   { border-left-color: rgba(68,  221, 136, 0.7); }
+.fu-accordion[open][data-key*="combinations"] { border-left-color: rgba(170, 136, 255, 0.7); }
+
 .fu-count {
   color: #444;
   font-size: 11px;
