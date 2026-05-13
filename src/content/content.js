@@ -640,6 +640,7 @@ async function applyUserData(map) {
   document.querySelectorAll('.fu-list').forEach(sortListByFavorites);
   await restoreAccordionState(map);
   updateProgress();
+  updateAccordionCounts();
   updateToggleBadge(map);
 }
 
@@ -716,9 +717,28 @@ async function handleLearnedClick(e) {
   const favActive = item.querySelector('.fu-fav-btn')?.classList.contains('fu-active') ?? false;
   item.classList.toggle('fu-learned', isLearned);
   updateProgress();
+  updateAccordionCounts();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function updateAccordionCounts() {
+  document.querySelectorAll('#fu-content .fu-accordion').forEach((accordion) => {
+    const total = accordion.querySelectorAll('.fu-item').length;
+    const learned = accordion.querySelectorAll('.fu-item.fu-learned').length;
+    const countEl = accordion.querySelector('.fu-count');
+    if (!countEl || total === 0) return;
+
+    const pct = learned / total;
+    if (learned === total) {
+      countEl.textContent = `✓ ${total}`;
+      countEl.style.color = '#f0a500';
+    } else {
+      countEl.textContent = `${learned}/${total}`;
+      countEl.style.color = pct >= 0.75 ? '#44dd88' : pct >= 0.25 ? '#3fa8ff' : '#444';
+    }
+  });
+}
+
 function updateProgress() {
   const el = document.getElementById('fu-progress');
   const header = document.getElementById('fu-header');
