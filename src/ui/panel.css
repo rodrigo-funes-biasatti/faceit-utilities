@@ -605,13 +605,6 @@ details.fu-accordion[open]::details-content {
   gap: 1px;
   padding: 4px 8px 4px 0;
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.fu-item:hover .fu-item-actions,
-.fu-item-actions.fu-has-active {
-  opacity: 1;
 }
 
 .fu-fav-btn,

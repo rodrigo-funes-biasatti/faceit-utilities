@@ -622,7 +622,6 @@ async function applyUserData(map) {
       learnedBtn.textContent = isLearned ? '✓' : '○';
       learnedBtn.classList.toggle('fu-active', isLearned);
     }
-    actions?.classList.toggle('fu-has-active', isFav || isLearned);
     item.classList.toggle('fu-learned', isLearned);
   });
 
@@ -677,7 +676,6 @@ async function handleFavClick(e) {
   btn.textContent = isFav ? '★' : '☆';
   btn.classList.toggle('fu-active', isFav);
   const learnedActive = item.querySelector('.fu-learned-btn')?.classList.contains('fu-active') ?? false;
-  item.querySelector('.fu-item-actions')?.classList.toggle('fu-has-active', isFav || learnedActive);
 
   const list = item.closest('.fu-list');
   if (list) sortListByFavorites(list);
@@ -704,7 +702,6 @@ async function handleLearnedClick(e) {
   btn.textContent = isLearned ? '✓' : '○';
   btn.classList.toggle('fu-active', isLearned);
   const favActive = item.querySelector('.fu-fav-btn')?.classList.contains('fu-active') ?? false;
-  item.querySelector('.fu-item-actions')?.classList.toggle('fu-has-active', isLearned || favActive);
   item.classList.toggle('fu-learned', isLearned);
   updateProgress();
 }
