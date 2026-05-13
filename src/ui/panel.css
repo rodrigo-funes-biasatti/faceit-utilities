@@ -11,6 +11,16 @@
   line-height: 1.4;
 }
 
+@keyframes fu-pulse-ring {
+  0%   { box-shadow: -2px 0 10px rgba(0,0,0,0.5), 0 0 0 0 rgba(255, 85, 0, 0.5); }
+  70%  { box-shadow: -2px 0 10px rgba(0,0,0,0.5), 0 0 0 8px rgba(255, 85, 0, 0); }
+  100% { box-shadow: -2px 0 10px rgba(0,0,0,0.5), 0 0 0 0 rgba(255, 85, 0, 0); }
+}
+
+#fu-toggle.fu-pulse {
+  animation: fu-pulse-ring 1.2s ease-out 2;
+}
+
 /* Botón de toggle pegado al borde derecho */
 #fu-toggle {
   position: absolute;

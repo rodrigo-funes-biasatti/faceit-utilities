@@ -301,6 +301,14 @@ function renderUtilities(map, data) {
 
   document.getElementById('fu-search-bar')?.classList.remove('fu-hidden');
   applyUserData(map);
+
+  // Pulse en el toggle si el panel está cerrado — ayuda a descubrir la extensión
+  const panel = document.getElementById('fu-panel');
+  const toggle = document.getElementById('fu-toggle');
+  if (panel?.classList.contains('fu-hidden') && toggle) {
+    toggle.classList.add('fu-pulse');
+    toggle.addEventListener('animationend', () => toggle.classList.remove('fu-pulse'), { once: true });
+  }
 }
 
 // ─── Video toggle ─────────────────────────────────────────────────────────────
