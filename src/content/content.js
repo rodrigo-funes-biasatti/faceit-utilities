@@ -170,6 +170,7 @@ function injectPanel() {
     });
     document.querySelector('#fu-content .fu-no-results')?.remove();
   });
+  document.addEventListener('keydown', handlePanelKeydown);
   initCompactMode();
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
@@ -791,6 +792,62 @@ function throttle(fn, ms) {
       fn.apply(this, args);
     }
   };
+}
+
+function handlePanelKeydown(e) {
+  const panel = document.getElementById('fu-panel');
+  const isTyping = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+
+  // Alt+G — toggle panel desde cualquier lugar
+  if (e.altKey && (e.key === 'g' || e.key === 'G')) {
+    e.preventDefault();
+    panel?.classList.toggle('fu-hidden');
+    return;
+  }
+
+  if (!panel || panel.classList.contains('fu-hidden')) return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    const openVideo = document.querySelector('.fu-video-wrap:not(.fu-hidden)');
+    if (openVideo) {
+      openVideo.querySelectorAll('video[data-blob-url]').forEach((v) => URL.revokeObjectURL(v.dataset.blobUrl));
+      openVideo.classList.add('fu-hidden');
+      openVideo.addEventListener('transitionend', () => { openVideo.innerHTML = ''; }, { once: true });
+    } else {
+      closePanel();
+    }
+    return;
+  }
+
+  if (isTyping) return;
+
+  switch (e.key) {
+    case 'f': case 'F':
+      e.preventDefault();
+      document.getElementById('fu-search')?.focus();
+      break;
+    case 's': case 'S':
+      e.preventDefault();
+      document.getElementById('fu-fav-filter')?.click();
+      break;
+    case 'c': case 'C':
+      e.preventDefault();
+      toggleCompactMode();
+      break;
+    case 'ArrowDown': case 'ArrowUp': {
+      e.preventDefault();
+      const items = [...document.querySelectorAll('#fu-content .fu-item:not([style*="display: none"])')];
+      if (!items.length) break;
+      const focused = document.activeElement?.closest('.fu-item');
+      const idx = focused ? items.indexOf(focused) : -1;
+      const next = e.key === 'ArrowDown'
+        ? items[Math.min(idx + 1, items.length - 1)]
+        : items[Math.max(idx - 1, 0)];
+      next?.querySelector('.fu-item-btn')?.focus();
+      break;
+    }
+  }
 }
 
 function escapeHtml(str) {
