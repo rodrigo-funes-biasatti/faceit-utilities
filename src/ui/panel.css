@@ -527,12 +527,12 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 13px;
-  padding: 1px 3px;
+  font-size: 14px;
+  padding: 4px 5px;
   line-height: 1;
-  border-radius: 3px;
+  border-radius: 4px;
   color: #333;
-  transition: color 0.15s;
+  transition: color 0.12s, background 0.12s;
 }
 
 .fu-fav-btn::after,
@@ -562,18 +562,22 @@
 
 .fu-fav-btn:hover {
   color: #f0a500;
+  background: rgba(240, 165, 0, 0.12);
 }
 
 .fu-learned-btn:hover {
   color: #44dd88;
+  background: rgba(68, 221, 136, 0.12);
 }
 
 .fu-fav-btn.fu-active {
   color: #f0a500;
+  background: rgba(240, 165, 0, 0.1);
 }
 
 .fu-learned-btn.fu-active {
   color: #44dd88;
+  background: rgba(68, 221, 136, 0.1);
 }
 
 .fu-item.fu-learned {
