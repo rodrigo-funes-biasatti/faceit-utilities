@@ -71,10 +71,14 @@ git tag "v$NEW"
 git push && git push --tags
 echo "✓ commit + tag v$NEW pusheados"
 
-# ─── Crear zip ────────────────────────────────────────────────────────────────
-ZIP="faceit-utilities-v$NEW.zip"
-rm -f faceit-utilities-v*.zip
-zip -r "$ZIP" manifest.json src/ popup/ icons/*.png --exclude "*.DS_Store" -q
+# ─── Crear zip en builds/ ─────────────────────────────────────────────────────
+mkdir -p builds
+ZIP="builds/faceit-utilities-v$NEW.zip"
+rm -f builds/faceit-utilities-v*.zip
+zip -r "$ZIP" manifest.json src/ popup/ icons/ \
+  --exclude "*.DS_Store" \
+  --exclude "__MACOSX/*" \
+  -q
 echo "✓ $ZIP generado ($(du -sh "$ZIP" | cut -f1))"
 
 echo ""
