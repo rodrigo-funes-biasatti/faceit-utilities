@@ -75,9 +75,9 @@
   transform: translateY(-50%);
   width: 340px;
   max-height: 75vh;
-  background: rgba(22, 22, 42, 0.92);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  background: rgba(22, 22, 42, 0.75);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px 0 0 8px;
   box-shadow: -6px 0 24px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
