@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.3.0] - 2026-05-14
+
+### UI / UX
+- Chevron rotable en acordeones indica estado abierto/cerrado
+- Barra de progreso degradado (verde→azul) en el borde inferior del header
+- Items aprendidos con borde verde, fondo tintado y nombre tachado
+- Botones ★ y ○ siempre visibles con área de click ampliada y fondo al hover/activo
+- Video de latas se abre y cierra con animación suave (grid-template-rows)
+- Pulse naranja en el botón toggle al detectar el mapa (si el panel está cerrado)
+- Skeleton de carga con shimmer animado reemplaza el texto gris de espera
+- Glassmorphism sutil en el panel (backdrop-filter blur)
+- Línea de color por tipo de granada en el borde izquierdo de cada acordeón
+- Glow animado en el buscador y selector de mapa al hacer foco
+- Thumbnail escala y muestra anillo naranja al hacer hover sobre un item
+- Panel se abre con easing expo-out (más fluido)
+- Footer colapsado con corazón visible; se expande al hover mostrando donación y crédito
+- Header en dos filas: nombre del mapa más grande en fila 1, progreso y badge en fila 2
+- Contadores de acordeón muestran `aprendidas/total` con color según porcentaje completado
+- Botón `?` con tooltip de atajos de teclado (posicionado fuera del panel para no cortarse)
+- Crédito `by @rodritest` con link a Instagram en el footer
+
+### Mejoras de accesibilidad
+- Navegación por teclado: `⌥G`/`Alt+G` toggle, `Esc` cerrar, `F` buscar, `S` favoritos, `C` compacto, `↑↓` navegar items
+- Atajo de toggle detecta OS y muestra `⌥G` en Mac o `Alt+G` en Windows
+
+### Bug fixes
+- Animación de acordeones restaurada con `::details-content` + `interpolate-size`
+- Tooltip de atajos movido a `document.body` con `position:fixed` para no cortarse por `overflow:hidden`
+- Shortcut `⌥G`/`Alt+G` usa `e.code` en lugar de `e.key` (Option+G en Mac produce `©`, no `g`)
+
+---
+
 ## [1.2.0] - 2026-05-11
 
 ### New features
