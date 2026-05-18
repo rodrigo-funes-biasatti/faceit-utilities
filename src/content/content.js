@@ -421,9 +421,9 @@ function handleItemClick(e) {
     return;
   }
 
-  // Videos nativos de assets.csnades.gg: se fetchean directo desde el content script
-  // (host_permissions bypasea CORS), se convierten a blob URL para que el <video> los
-  // reproduzca sin restricciones de CSP de la página. El blob se revoca al cerrar.
+  // Videos nativos de assets.csnades.gg: el CSP de FACEIT bloquea connect-src externo en
+  // content scripts; el service worker no tiene esa restricción. El blob URL resultante
+  // se reproduce sin CSP (same-origin respecto al contexto de extensión). Se revoca al cerrar.
   wrap.innerHTML = `
     <div class="fu-video-inner">
       <div class="fu-video-loading">Cargando video...</div>
@@ -438,13 +438,18 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
   const loading = inner?.querySelector('.fu-video-loading');
 
   try {
-    // Fetch directo desde el content script: Chrome bypasses CORS para extensiones con
-    // host_permissions sobre el dominio destino, por lo que no se necesita el service worker.
-    // (La delegación vía SW + base64 causaba que en extensiones publicadas el payload grande
-    // llegara vacío, produciendo un <video> gris sin contenido.)
-    const res = await fetch(videoUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
+    // El content script hereda el CSP de FACEIT, que no incluye assets.csnades.gg.
+    // El service worker no está sujeto al CSP de la página, así que se delega el fetch.
+    // El ArrayBuffer no es JSON-serializable: se pasa como base64 y se reconvierte acá.
+    const res = await chrome.runtime.sendMessage({ type: 'FETCH_VIDEO', url: videoUrl });
+    if (!res?.ok) throw new Error(res?.error ?? 'fetch failed');
+    if (!res.base64) throw new Error('empty video data');
+
+    const binary = atob(res.base64);
+    if (binary.length === 0) throw new Error('empty video data');
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.mime });
     const blobUrl = URL.createObjectURL(blob);
 
     if (!inner || !inner.isConnected) {

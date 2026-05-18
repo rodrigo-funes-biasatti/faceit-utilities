@@ -59,7 +59,8 @@ async function handleFetchVideo(url, sendResponse) {
       sendResponse({ ok: false, error: 'URL no permitida' });
       return;
     }
-    const res = await fetch(url);
+    // Referer evita que CDNs de origen rechacen el request con cuerpo vacío.
+    const res = await fetch(url, { headers: { Referer: 'https://csnades.gg/' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buffer = await res.arrayBuffer();
     const mime = res.headers.get('content-type') ?? 'video/mp4';

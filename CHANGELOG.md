@@ -1,6 +1,17 @@
 # Changelog
 
-## [1.3.1] - 2026-05-08
+## [1.3.2] - 2026-05-18
+
+### Bug fixes
+- Reverted direct content-script fetch for native videos — FACEIT's page CSP blocks `connect-src` to `assets.csnades.gg` in content scripts, causing all native videos to show the fallback link.
+- Service worker relay restored as the correct approach (it is not subject to the page's CSP).
+- Added `Referer: https://csnades.gg/` header to the service worker fetch — some CDNs return an empty 200 body for requests without a recognisable referrer, which was producing the gray player.
+- Added guard: if the base64 payload is empty, the fallback link is shown instead of an unplayable gray `<video>`.
+- Fixed `isConnected` guard to check the inner container node instead of the outer wrap (which is always in the DOM).
+
+---
+
+## [1.3.1] - 2026-05-18
 
 ### Bug fix
 - Fixed native videos from `assets.csnades.gg` showing as a gray player in the published extension. Root cause: the service-worker ↔ content-script base64 relay could produce an empty payload in packed (Web Store) builds, creating a zero-byte blob that the `<video>` element could not play. Fix: the content script now fetches the video directly — Chrome extension `host_permissions` bypass CORS for content-script `fetch()` calls, so no service-worker relay is needed.
