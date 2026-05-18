@@ -205,7 +205,7 @@ function injectPanel() {
         </div>
         <div class="fu-header-row2">
           <span id="fu-progress" class="fu-hidden" title="Latas aprendidas"></span>
-          <button id="fu-lang-toggle" data-tooltip="Language / Idioma">EN</button>
+          <button id="fu-lang-toggle" data-lang="es" data-tooltip="Language / Idioma"><span class="fu-lang-opt">ES</span><span class="fu-lang-opt">EN</span></button>
           <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         </div>
       </div>
@@ -676,7 +676,7 @@ async function initLang() {
 
 function applyLanguage() {
   const langBtn = document.getElementById('fu-lang-toggle');
-  if (langBtn) langBtn.textContent = currentLang === 'es' ? 'EN' : 'ES';
+  if (langBtn) langBtn.dataset.lang = currentLang;
 
   const search = document.getElementById('fu-search');
   if (search) search.placeholder = t('searchPlaceholder');
