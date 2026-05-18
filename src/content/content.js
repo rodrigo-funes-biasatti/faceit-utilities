@@ -421,10 +421,9 @@ function handleItemClick(e) {
     return;
   }
 
-  // Videos nativos de assets.csnades.gg: el CSP de FACEIT bloquea media-src externo.
-  // Solución: fetchar el MP4 desde el content script (que tiene host_permissions y
-  // puede ignorar CORS/CSP), convertir a blob URL (same-origin → no bloqueado), e
-  // inyectarlo en el <video>. Se revoca el blob al cerrar para no acumular memoria.
+  // Videos nativos de assets.csnades.gg: se fetchean directo desde el content script
+  // (host_permissions bypasea CORS), se convierten a blob URL para que el <video> los
+  // reproduzca sin restricciones de CSP de la página. El blob se revoca al cerrar.
   wrap.innerHTML = `
     <div class="fu-video-inner">
       <div class="fu-video-loading">Cargando video...</div>
@@ -439,18 +438,16 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
   const loading = inner?.querySelector('.fu-video-loading');
 
   try {
-    // El fetch se delega al service worker para evadir restricciones CORS del servidor.
-    // El service worker devuelve base64 porque ArrayBuffer no sobrevive la serialización JSON de sendResponse.
-    const res = await chrome.runtime.sendMessage({ type: 'FETCH_VIDEO', url: videoUrl });
-    if (!res?.ok) throw new Error(res?.error ?? 'fetch failed');
-
-    const binary = atob(res.base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: res.mime });
+    // Fetch directo desde el content script: Chrome bypasses CORS para extensiones con
+    // host_permissions sobre el dominio destino, por lo que no se necesita el service worker.
+    // (La delegación vía SW + base64 causaba que en extensiones publicadas el payload grande
+    // llegara vacío, produciendo un <video> gris sin contenido.)
+    const res = await fetch(videoUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
 
-    if (!inner || !wrap.isConnected) {
+    if (!inner || !inner.isConnected) {
       URL.revokeObjectURL(blobUrl);
       return;
     }
