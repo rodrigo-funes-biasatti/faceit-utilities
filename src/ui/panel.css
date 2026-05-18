@@ -219,6 +219,50 @@
   color: #aaa;
 }
 
+#fu-lang-toggle {
+  position: relative;
+  background: none;
+  border: 1px solid #252545;
+  border-radius: 4px;
+  color: #444;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 5px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+#fu-lang-toggle::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a32;
+  border: 1px solid #252545;
+  color: #cccccc;
+  font-size: 10px;
+  white-space: nowrap;
+  padding: 3px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+}
+
+#fu-lang-toggle:hover::after {
+  opacity: 1;
+}
+
+#fu-lang-toggle:hover {
+  color: #aaa;
+  border-color: #444;
+}
+
 /* Barra de búsqueda */
 #fu-search-bar {
   display: flex;

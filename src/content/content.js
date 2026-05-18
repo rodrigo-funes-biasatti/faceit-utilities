@@ -24,6 +24,84 @@ const MAP_DISPLAY = {
 // Mapas reconocidos pero sin cobertura en csnades.gg todavía.
 const MAPS_UNSUPPORTED = new Set(['cache', 'cobblestone']);
 
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+const STRINGS = {
+  es: {
+    waitingMap:        'Esperando mapa...',
+    waitingRoom:       'Esperando sala de FACEIT...',
+    waitingVote:       'Esperando votación de mapa...',
+    selectMap:         'Seleccioná un mapa para ver las utilidades.',
+    chooseMap:         '— Elegir mapa —',
+    close:             'Cerrar',
+    nadesLearned:      'Latas aprendidas',
+    searchPlaceholder: 'Buscar lata...',
+    favoritesOnly:     'Solo favoritos',
+    compactMode:       'Modo compacto',
+    collapseAll:       'Colapsar todo',
+    donate:            '♥ Invitame un café',
+    comingSoon:        '{name} aún no está disponible en csnades.gg. ¡Próximamente!',
+    errorUnknown:      'desconocido',
+    noUtilities:       'No se encontraron utilidades.',
+    favorite:          'Favorito',
+    learned:           'Aprendida',
+    loadingVideo:      'Cargando video...',
+    videoUnavailable:  'Video no disponible',
+    watchOnCsnades:    '▶ Ver en csnades.gg',
+    openOnCsnades:     'Abrir en csnades.gg ↗',
+    noResults:         'Sin resultados.',
+    shortcutsTitle:    'Atajos de teclado',
+    shortcutToggle:    'Abrir / cerrar panel',
+    shortcutEsc:       'Cerrar video o panel',
+    shortcutSearch:    'Buscar',
+    shortcutFav:       'Filtrar favoritos',
+    shortcutCompact:   'Modo compacto',
+    shortcutNav:       'Navegar items',
+  },
+  en: {
+    waitingMap:        'Waiting for map...',
+    waitingRoom:       'Waiting for FACEIT room...',
+    waitingVote:       'Waiting for map vote...',
+    selectMap:         'Select a map to see utilities.',
+    chooseMap:         '— Choose map —',
+    close:             'Close',
+    nadesLearned:      'Nades learned',
+    searchPlaceholder: 'Search nade...',
+    favoritesOnly:     'Favorites only',
+    compactMode:       'Compact mode',
+    collapseAll:       'Collapse all',
+    donate:            '♥ Buy me a coffee',
+    comingSoon:        '{name} is not yet available on csnades.gg. Coming soon!',
+    errorUnknown:      'unknown',
+    noUtilities:       'No utilities found.',
+    favorite:          'Favorite',
+    learned:           'Learned',
+    loadingVideo:      'Loading video...',
+    videoUnavailable:  'Video unavailable',
+    watchOnCsnades:    '▶ Watch on csnades.gg',
+    openOnCsnades:     'Open on csnades.gg ↗',
+    noResults:         'No results.',
+    shortcutsTitle:    'Keyboard shortcuts',
+    shortcutToggle:    'Open / close panel',
+    shortcutEsc:       'Close video or panel',
+    shortcutSearch:    'Search',
+    shortcutFav:       'Filter favorites',
+    shortcutCompact:   'Compact mode',
+    shortcutNav:       'Navigate items',
+  },
+};
+
+let currentLang = 'es';
+
+function t(key) {
+  return STRINGS[currentLang]?.[key] ?? STRINGS.es[key] ?? key;
+}
+
+function tf(key, vars = {}) {
+  let str = t(key);
+  for (const [k, v] of Object.entries(vars)) str = str.replace(`{${k}}`, v);
+  return str;
+}
+
 // ─── Estado ───────────────────────────────────────────────────────────────────
 let currentMap = null;
 let mapObserver = null;
@@ -32,6 +110,7 @@ let favFilterActive = false;
 let compactMode = false;
 let restoringAccordions = false;
 let saveAccordionDebounce = null;
+// currentLang se inicializa desde storage en initLang() pero arranca en 'es' como default.
 
 // ─── Detección de navegación SPA ─────────────────────────────────────────────
 // Polling de URL cada 500ms. popstate cubre back/forward instantáneamente;
@@ -126,6 +205,7 @@ function injectPanel() {
         </div>
         <div class="fu-header-row2">
           <span id="fu-progress" class="fu-hidden" title="Latas aprendidas"></span>
+          <button id="fu-lang-toggle" data-tooltip="Language / Idioma">EN</button>
           <a href="https://csnades.gg" target="_blank" rel="noopener noreferrer" class="fu-badge">csnades.gg</a>
         </div>
       </div>
@@ -179,15 +259,7 @@ function injectPanel() {
 
   const shortcutsTooltip = document.createElement('div');
   shortcutsTooltip.id = 'fu-shortcuts-tooltip';
-  shortcutsTooltip.innerHTML = `
-    <div class="fu-sc-title">Atajos de teclado</div>
-    <div class="fu-sc-row"><kbd>${altKey}</kbd><span>Abrir / cerrar panel</span></div>
-    <div class="fu-sc-row"><kbd>Esc</kbd><span>Cerrar video o panel</span></div>
-    <div class="fu-sc-row"><kbd>F</kbd><span>Buscar</span></div>
-    <div class="fu-sc-row"><kbd>S</kbd><span>Filtrar favoritos</span></div>
-    <div class="fu-sc-row"><kbd>C</kbd><span>Modo compacto</span></div>
-    <div class="fu-sc-row"><kbd>↑ ↓</kbd><span>Navegar items</span></div>
-  `;
+  shortcutsTooltip.innerHTML = buildShortcutsHTML(altKey);
   document.body.appendChild(shortcutsTooltip);
 
   const shortcutsBtn = document.getElementById('fu-shortcuts-btn');
@@ -201,12 +273,14 @@ function injectPanel() {
     shortcutsTooltip.style.opacity = '0';
   });
 
+  document.getElementById('fu-lang-toggle').addEventListener('click', toggleLang);
   initCompactMode();
+  initLang();
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
     if (!map) {
       setMapIcon(null);
-      showStatus('Seleccioná un mapa para ver las utilidades.');
+      showStatus(t('selectMap'));
       return;
     }
     setMapIcon(map);
@@ -315,8 +389,8 @@ function renderUtilities(map, data) {
                     ${item.thumbnailUrl ? `<img class="fu-item-thumb" src="${escapeHtml(item.thumbnailUrl)}" loading="lazy" alt=""/>` : ''}
                   </button>
                   <div class="fu-item-actions">
-                    <button class="fu-fav-btn" data-tooltip="Favorito" aria-label="Favorito">☆</button>
-                    <button class="fu-learned-btn" data-tooltip="Aprendida" aria-label="Aprendida">○</button>
+                    <button class="fu-fav-btn" data-tooltip="${escapeHtml(t('favorite'))}" aria-label="Favorito">☆</button>
+                    <button class="fu-learned-btn" data-tooltip="${escapeHtml(t('learned'))}" aria-label="Aprendida">○</button>
                   </div>
                 </div>
                 <div class="fu-video-wrap fu-hidden"></div>
@@ -338,7 +412,7 @@ function renderUtilities(map, data) {
     `;
   }
 
-  content.innerHTML = html || '<div class="fu-status">No se encontraron utilidades.</div>';
+  content.innerHTML = html || `<div class="fu-status">${t('noUtilities')}</div>`;
 
   content.querySelectorAll('.fu-item-btn').forEach((btn) => {
     btn.addEventListener('click', handleItemClick);
@@ -391,15 +465,15 @@ function handleItemClick(e) {
   wrap.classList.remove('fu-hidden');
 
   const linkHtml = detailUrl
-    ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">Abrir en csnades.gg ↗</a>`
+    ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link fu-watch-link--small">${t('openOnCsnades')}</a>`
     : '';
 
   if (!videoUrl) {
     wrap.innerHTML = `
       <div class="fu-video-fallback">
         ${detailUrl
-          ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link">▶ Ver en csnades.gg</a>`
-          : '<span class="fu-status">Video no disponible</span>'}
+          ? `<a href="${escapeHtml(detailUrl)}" target="_blank" rel="noopener noreferrer" class="fu-watch-link">${t('watchOnCsnades')}</a>`
+          : `<span class="fu-status">${t('videoUnavailable')}</span>`}
       </div>`;
     return;
   }
@@ -426,7 +500,7 @@ function handleItemClick(e) {
   // se reproduce sin CSP (same-origin respecto al contexto de extensión). Se revoca al cerrar.
   wrap.innerHTML = `
     <div class="fu-video-inner">
-      <div class="fu-video-loading">Cargando video...</div>
+      <div class="fu-video-loading">${t('loadingVideo')}</div>
       ${linkHtml}
     </div>`;
 
@@ -475,7 +549,7 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.className = 'fu-watch-link';
-      link.textContent = '▶ Ver en csnades.gg';
+      link.textContent = t('watchOnCsnades');
       fallback.appendChild(link);
     }
     loading?.replaceWith(fallback);
@@ -496,7 +570,7 @@ async function loadForMap(map) {
       const mapEl = document.getElementById('fu-map-name');
       if (mapEl) mapEl.textContent = name;
     }
-    showStatus(`${name} aún no está disponible en csnades.gg. ¡Próximamente!`);
+    showStatus(tf('comingSoon', { name }));
     return;
   }
 
@@ -505,7 +579,7 @@ async function loadForMap(map) {
   const res = await chrome.runtime.sendMessage({ type: 'FETCH_UTILITIES', map });
 
   if (!res?.ok) {
-    showStatus(`Error: ${res?.error ?? 'desconocido'}`);
+    showStatus(`Error: ${res?.error ?? t('errorUnknown')}`);
     return;
   }
 
@@ -535,7 +609,7 @@ async function onPageChange() {
       await loadForMap(select.value);
     } else {
       setMapIcon(null);
-      showStatus('Seleccioná un mapa para ver las utilidades.');
+      showStatus(t('selectMap'));
     }
     return;
   }
@@ -551,7 +625,7 @@ async function onPageChange() {
   // anterior en nuestro propio panel no sea un falso positivo en detectMapFromDOM().
   currentMap = null;
   const mapEl = document.getElementById('fu-map-name');
-  if (mapEl) mapEl.textContent = 'Esperando mapa...';
+  if (mapEl) mapEl.textContent = t('waitingMap');
   setMapIcon(null);
 
   if (MOCK.enabled) {
@@ -560,7 +634,7 @@ async function onPageChange() {
   }
 
   injectPanel();
-  showStatus('Esperando votación de mapa...');
+  showStatus(t('waitingVote'));
 
   const checkFn = async () => {
     const map = detectMapFromDOM();
@@ -573,6 +647,78 @@ async function onPageChange() {
   mapObserver = new MutationObserver(throttle(checkFn, 400));
   mapObserver.observe(document.body, { childList: true, subtree: true });
   await checkFn();
+}
+
+// ─── Idioma ───────────────────────────────────────────────────────────────────
+function buildShortcutsHTML(altKey) {
+  return `
+    <div class="fu-sc-title">${t('shortcutsTitle')}</div>
+    <div class="fu-sc-row"><kbd>${altKey}</kbd><span>${t('shortcutToggle')}</span></div>
+    <div class="fu-sc-row"><kbd>Esc</kbd><span>${t('shortcutEsc')}</span></div>
+    <div class="fu-sc-row"><kbd>F</kbd><span>${t('shortcutSearch')}</span></div>
+    <div class="fu-sc-row"><kbd>S</kbd><span>${t('shortcutFav')}</span></div>
+    <div class="fu-sc-row"><kbd>C</kbd><span>${t('shortcutCompact')}</span></div>
+    <div class="fu-sc-row"><kbd>↑ ↓</kbd><span>${t('shortcutNav')}</span></div>
+  `;
+}
+
+async function toggleLang() {
+  currentLang = currentLang === 'es' ? 'en' : 'es';
+  await chrome.storage.local.set({ fu_lang: currentLang });
+  applyLanguage();
+}
+
+async function initLang() {
+  const result = await chrome.storage.local.get('fu_lang');
+  currentLang = result.fu_lang ?? 'es';
+  applyLanguage();
+}
+
+function applyLanguage() {
+  const langBtn = document.getElementById('fu-lang-toggle');
+  if (langBtn) langBtn.textContent = currentLang === 'es' ? 'EN' : 'ES';
+
+  const search = document.getElementById('fu-search');
+  if (search) search.placeholder = t('searchPlaceholder');
+
+  const closeBtn = document.getElementById('fu-close');
+  if (closeBtn) closeBtn.title = t('close');
+
+  const progress = document.getElementById('fu-progress');
+  if (progress) progress.title = t('nadesLearned');
+
+  const favFilter = document.getElementById('fu-fav-filter');
+  if (favFilter) favFilter.dataset.tooltip = t('favoritesOnly');
+
+  const compactToggle = document.getElementById('fu-compact-toggle');
+  if (compactToggle) compactToggle.dataset.tooltip = t('compactMode');
+
+  const collapseAll = document.getElementById('fu-collapse-all');
+  if (collapseAll) collapseAll.dataset.tooltip = t('collapseAll');
+
+  const donate = document.getElementById('fu-donate');
+  if (donate) donate.textContent = t('donate');
+
+  const defaultOption = document.querySelector('#fu-map-select option[value=""]');
+  if (defaultOption) defaultOption.textContent = t('chooseMap');
+
+  // Solo actualiza el placeholder si no hay un mapa real mostrado
+  const mapName = document.getElementById('fu-map-name');
+  const placeholders = [STRINGS.es.waitingMap, STRINGS.en.waitingMap];
+  if (mapName && placeholders.includes(mapName.textContent)) {
+    mapName.textContent = t('waitingMap');
+  }
+
+  // Reconstruye el tooltip de atajos con el nuevo idioma
+  const tooltip = document.getElementById('fu-shortcuts-tooltip');
+  if (tooltip) {
+    const isMac = /mac/i.test(navigator.platform || navigator.userAgentData?.platform || '');
+    tooltip.innerHTML = buildShortcutsHTML(isMac ? '⌥G' : 'Alt+G');
+  }
+
+  // Actualiza tooltips de items ya renderizados
+  document.querySelectorAll('.fu-fav-btn').forEach((btn) => { btn.dataset.tooltip = t('favorite'); });
+  document.querySelectorAll('.fu-learned-btn').forEach((btn) => { btn.dataset.tooltip = t('learned'); });
 }
 
 // ─── Compact mode ─────────────────────────────────────────────────────────────
@@ -813,7 +959,7 @@ function filterNades(query) {
     if (!noResults) {
       const el = document.createElement('div');
       el.className = 'fu-status fu-no-results';
-      el.textContent = 'Sin resultados.';
+      el.textContent = t('noResults');
       content?.appendChild(el);
     }
   } else {

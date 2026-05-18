@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0] - 2026-05-18
+
+### New features
+- Language toggle (ES / EN) — small button in the panel header switches between Spanish and English for all UI text. Choice persists across sessions via `chrome.storage.local`. Only the extension UI is translated; nade names come from csnades.gg as-is.
+
+---
+
 ## [1.3.2] - 2026-05-18
 
 ### Bug fixes
