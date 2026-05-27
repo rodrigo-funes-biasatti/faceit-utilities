@@ -22,7 +22,7 @@ const MAP_DISPLAY = {
 };
 
 // Mapas reconocidos pero sin cobertura en csnades.gg todavía.
-const MAPS_UNSUPPORTED = new Set(['cache', 'cobblestone']);
+const MAPS_UNSUPPORTED = new Set(['cobblestone']);
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
 const STRINGS = {

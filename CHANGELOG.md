@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0] - 2026-05-27
+
+### New features
+- Cache map is now fully supported — removed from the "coming soon" list, nades load from csnades.gg normally.
+- Automatic update detection: the service worker now checks csnades.gg every 6 hours in the background. If the community nade count for a cached map changes, the cache for that map is invalidated so the next panel open fetches fresh data.
+
+---
+
 ## [1.4.0] - 2026-05-18
 
 ### New features

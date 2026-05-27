@@ -1,15 +1,59 @@
-import { MAPS, UTILITY_TYPES, CACHE_TTL_MS } from '../modules/config.js';
+import { MAPS, UTILITY_TYPES, CACHE_TTL_MS, CSNADES_BASE } from '../modules/config.js';
 import { fetchUtilityList, fetchOfficialNadeList } from '../modules/csnades-scraper.js';
 import { Cache } from '../modules/cache.js';
 
-// Limpia el caché automáticamente en cada instalación o actualización,
-// para que los usuarios nunca vean datos obsoletos tras un update.
+const UPDATE_ALARM = 'fu_update_check';
+const UPDATE_PERIOD_MIN = 360; // cada 6 horas
+
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install' || reason === 'update') {
     Cache.clear();
     console.log(`[FU] cache cleared on ${reason}`);
   }
+  chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: UPDATE_PERIOD_MIN });
 });
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === UPDATE_ALARM) checkForCsnadesUpdates();
+});
+
+// Compara el conteo de nades comunitarias en csnades.gg contra el caché local.
+// Si el conteo cambió → invalida el caché para que el próximo panel load traiga datos frescos.
+async function checkForCsnadesUpdates() {
+  const all = await new Promise((r) => chrome.storage.local.get(null, r));
+  const maps = Object.keys(all)
+    .filter((k) => k.startsWith('utilities_'))
+    .map((k) => k.slice('utilities_'.length))
+    .filter((slug) => Object.hasOwn(MAPS, slug));
+
+  let invalidated = 0;
+  for (const map of maps) {
+    const cached = await Cache.get(`utilities_${map}`);
+    if (!cached) continue;
+
+    // Los items comunitarios tienen videoUrl de YouTube (o null), nunca de assets.csnades.gg
+    const cachedCount = (cached.smokes ?? []).filter(
+      (n) => !n.videoUrl?.includes('assets.csnades.gg')
+    ).length;
+
+    try {
+      const res = await fetch(`${CSNADES_BASE}/api/server/community/${map}/smokes`);
+      if (!res.ok) continue;
+      const fresh = await res.json();
+      if (!Array.isArray(fresh)) continue;
+
+      if (fresh.length !== cachedCount) {
+        await new Promise((r) => chrome.storage.local.remove(`utilities_${map}`, r));
+        invalidated++;
+        console.log(`[FU] ${map}: smokes community ${cachedCount} → ${fresh.length}, caché invalidado`);
+      }
+    } catch (err) {
+      console.warn(`[FU] update check failed for ${map}:`, err.message);
+    }
+  }
+
+  if (invalidated > 0) console.log(`[FU] ${invalidated} mapa(s) invalidados`);
+}
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'FETCH_UTILITIES') {
