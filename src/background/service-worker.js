@@ -17,41 +17,51 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === UPDATE_ALARM) checkForCsnadesUpdates();
 });
 
-// Compara el conteo de nades comunitarias en csnades.gg contra el caché local.
-// Si el conteo cambió → invalida el caché para que el próximo panel load traiga datos frescos.
-async function checkForCsnadesUpdates() {
-  const all = await new Promise((r) => chrome.storage.local.get(null, r));
-  const maps = Object.keys(all)
+// Lista las claves de caché sin traerse los valores. chrome.storage.local.get(null)
+// deserializaba TODA la storage (megas de nades) solo para leer los nombres.
+async function cachedMapSlugs() {
+  const keys = typeof chrome.storage.local.getKeys === 'function'
+    ? await chrome.storage.local.getKeys()
+    : Object.keys(await new Promise((r) => chrome.storage.local.get(null, r)));
+  return keys
     .filter((k) => k.startsWith('utilities_'))
     .map((k) => k.slice('utilities_'.length))
     .filter((slug) => Object.hasOwn(MAPS, slug));
+}
 
-  let invalidated = 0;
-  for (const map of maps) {
-    const cached = await Cache.get(`utilities_${map}`);
-    if (!cached) continue;
+// Compara el conteo de nades comunitarias en csnades.gg contra el caché local.
+// Si el conteo cambió → invalida el caché para que el próximo panel load traiga datos frescos.
+async function checkMapForUpdate(map) {
+  const cached = await Cache.get(`utilities_${map}`);
+  if (!cached) return false;
 
-    // Los items comunitarios tienen videoUrl de YouTube (o null), nunca de assets.csnades.gg
-    const cachedCount = (cached.smokes ?? []).filter(
-      (n) => !n.videoUrl?.includes('assets.csnades.gg')
-    ).length;
+  // Los items comunitarios tienen videoUrl de YouTube (o null), nunca de assets.csnades.gg
+  const cachedCount = (cached.smokes ?? []).filter(
+    (n) => !n.videoUrl?.includes('assets.csnades.gg')
+  ).length;
 
-    try {
-      const res = await fetch(`${CSNADES_BASE}/api/server/community/${map}/smokes`);
-      if (!res.ok) continue;
-      const fresh = await res.json();
-      if (!Array.isArray(fresh)) continue;
+  try {
+    const res = await fetch(`${CSNADES_BASE}/api/server/community/${map}/smokes`);
+    if (!res.ok) return false;
+    const fresh = await res.json();
+    if (!Array.isArray(fresh)) return false;
+    if (fresh.length === cachedCount) return false;
 
-      if (fresh.length !== cachedCount) {
-        await new Promise((r) => chrome.storage.local.remove(`utilities_${map}`, r));
-        invalidated++;
-        console.log(`[FU] ${map}: smokes community ${cachedCount} → ${fresh.length}, caché invalidado`);
-      }
-    } catch (err) {
-      console.warn(`[FU] update check failed for ${map}:`, err.message);
-    }
+    await new Promise((r) => chrome.storage.local.remove(`utilities_${map}`, r));
+    console.log(`[FU] ${map}: smokes community ${cachedCount} → ${fresh.length}, caché invalidado`);
+    return true;
+  } catch (err) {
+    console.warn(`[FU] update check failed for ${map}:`, err.message);
+    return false;
   }
+}
 
+async function checkForCsnadesUpdates() {
+  const maps = await cachedMapSlugs();
+  // En paralelo: en serie eran hasta 11 fetches encadenados y el service worker
+  // de MV3 se puede terminar antes de llegar al último.
+  const results = await Promise.allSettled(maps.map(checkMapForUpdate));
+  const invalidated = results.filter((r) => r.status === 'fulfilled' && r.value).length;
   if (invalidated > 0) console.log(`[FU] ${invalidated} mapa(s) invalidados`);
 }
 
@@ -109,14 +119,22 @@ async function handleFetchVideo(url, sendResponse) {
     const buffer = await res.arrayBuffer();
     const mime = res.headers.get('content-type') ?? 'video/mp4';
 
-    // Codificar en chunks para evitar "Maximum call stack size exceeded"
+    // toBase64 nativo evita construir el string binario intermedio (un pico de
+    // memoria extra del tamaño del video). Chrome 140+; fallback en chunks para
+    // evitar "Maximum call stack size exceeded".
     const bytes = new Uint8Array(buffer);
-    let binary = '';
-    const CHUNK = 8192;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    let base64;
+    if (typeof bytes.toBase64 === 'function') {
+      base64 = bytes.toBase64();
+    } else {
+      let binary = '';
+      const CHUNK = 8192;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+      }
+      base64 = btoa(binary);
     }
-    sendResponse({ ok: true, base64: btoa(binary), mime });
+    sendResponse({ ok: true, base64, mime });
   } catch (err) {
     sendResponse({ ok: false, error: err.message });
   }

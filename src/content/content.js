@@ -539,10 +539,18 @@ async function fetchBlobVideo(videoUrl, detailUrl, wrap) {
     if (!res?.ok) throw new Error(res?.error ?? 'fetch failed');
     if (!res.base64) throw new Error('empty video data');
 
-    const binary = atob(res.base64);
-    if (binary.length === 0) throw new Error('empty video data');
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    // Decodificar con el decoder nativo cuando está disponible. El loop byte a byte
+    // corría en el main thread de FACEIT: ~6.7M iteraciones para un mp4 de 5 MB.
+    // fromBase64 es Chrome 140+, así que se mantiene el fallback.
+    let bytes;
+    if (typeof Uint8Array.fromBase64 === 'function') {
+      bytes = Uint8Array.fromBase64(res.base64);
+    } else {
+      const binary = atob(res.base64);
+      bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    }
+    if (bytes.length === 0) throw new Error('empty video data');
     const blob = new Blob([bytes], { type: res.mime });
     const blobUrl = URL.createObjectURL(blob);
 

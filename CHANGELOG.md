@@ -9,6 +9,11 @@
 - New keyboard shortcut: `T` cycles ALL → T → CT.
 - Choice persists across sessions and maps via `chrome.storage.local` (`fu_side_filter`).
 
+### Performance
+- Native base64 for the video relay. The service worker built the payload with `String.fromCharCode` in 8 KB chunks and the content script decoded it with a byte-by-byte JS loop that ran on FACEIT's main thread. Both now use `Uint8Array#toBase64` / `Uint8Array.fromBase64` when available, with the previous implementations kept as a fallback. Measured on 3 MB of binary data: encode 65.3 ms → 1.0 ms, decode 9.9 ms → 1.2 ms, byte-identical round trip.
+- `chrome.storage.local.getKeys()` replaces `get(null)` when listing cache keys, in both the 6-hourly update check and `Cache.clear()`. `get(null)` deserialised every cached map (megabytes of nade data) just to read key names.
+- The 6-hourly update check now runs its per-map requests with `Promise.allSettled` instead of sequential `await`s. Up to 11 chained fetches risked the MV3 service worker being terminated before the last one finished.
+
 ### Bug fixes
 - Accordion collapse state is no longer clobbered when re-applying a filter. `filterNades()` auto-expanded every matching accordion whenever the search box held any text; since the side filter and the favourites filter both re-run it with the current query, switching sides with leftover text in the search box expanded everything. Auto-expanding is now opt-in (`{ autoOpen: true }`) and only the search input asks for it.
 

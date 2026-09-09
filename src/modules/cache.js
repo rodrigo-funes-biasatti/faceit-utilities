@@ -26,13 +26,13 @@ export const Cache = {
     });
   },
 
+  // getKeys evita deserializar todos los valores cacheados solo para leer nombres.
   async clear() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(null, (all) => {
-        const cacheKeys = Object.keys(all).filter((k) => k.startsWith('utilities_'));
-        if (cacheKeys.length === 0) return resolve();
-        chrome.storage.local.remove(cacheKeys, resolve);
-      });
-    });
+    const keys = typeof chrome.storage.local.getKeys === 'function'
+      ? await chrome.storage.local.getKeys()
+      : Object.keys(await new Promise((r) => chrome.storage.local.get(null, r)));
+    const cacheKeys = keys.filter((k) => k.startsWith('utilities_'));
+    if (cacheKeys.length === 0) return;
+    return new Promise((resolve) => chrome.storage.local.remove(cacheKeys, resolve));
   },
 };
