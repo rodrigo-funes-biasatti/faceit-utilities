@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0] - 2026-09-09
+
+### New features
+- Side filter (ALL / T / CT) — segmented control in the filter bar that narrows the panel to one team's nades. The side already came from csnades.gg (`item.team`) and was normalised by the scraper; it is now filterable instead of only being a section header.
+- The sliding indicator takes the colour of the active side (orange for T, blue for CT), matching the existing `T-SIDE` / `CT-SIDE` labels.
+- With a side pinned, the redundant `T-SIDE` / `CT-SIDE` header is hidden to save vertical space.
+- New keyboard shortcut: `T` cycles ALL → T → CT.
+- Choice persists across sessions and maps via `chrome.storage.local` (`fu_side_filter`).
+
+### Bug fixes
+- Accordion collapse state is no longer clobbered when re-applying a filter. `filterNades()` auto-expanded every matching accordion whenever the search box held any text; since the side filter and the favourites filter both re-run it with the current query, switching sides with leftover text in the search box expanded everything. Auto-expanding is now opt-in (`{ autoOpen: true }`) and only the search input asks for it.
+
+---
+
 ## [1.5.0] - 2026-05-27
 
 ### New features

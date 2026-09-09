@@ -36,6 +36,7 @@ const STRINGS = {
     nadesLearned:      'Latas aprendidas',
     searchPlaceholder: 'Buscar lata...',
     favoritesOnly:     'Solo favoritos',
+    sideFilter:        'Filtrar por lado',
     compactMode:       'Modo compacto',
     collapseAll:       'Colapsar todo',
     donate:            '♥ Invitame un café',
@@ -54,6 +55,7 @@ const STRINGS = {
     shortcutEsc:       'Cerrar video o panel',
     shortcutSearch:    'Buscar',
     shortcutFav:       'Filtrar favoritos',
+    shortcutSide:      'Lado: todas / T / CT',
     shortcutCompact:   'Modo compacto',
     shortcutNav:       'Navegar items',
   },
@@ -67,6 +69,7 @@ const STRINGS = {
     nadesLearned:      'Nades learned',
     searchPlaceholder: 'Search nade...',
     favoritesOnly:     'Favorites only',
+    sideFilter:        'Filter by side',
     compactMode:       'Compact mode',
     collapseAll:       'Collapse all',
     donate:            '♥ Buy me a coffee',
@@ -85,6 +88,7 @@ const STRINGS = {
     shortcutEsc:       'Close video or panel',
     shortcutSearch:    'Search',
     shortcutFav:       'Filter favorites',
+    shortcutSide:      'Side: all / T / CT',
     shortcutCompact:   'Compact mode',
     shortcutNav:       'Navigate items',
   },
@@ -107,6 +111,9 @@ let currentMap = null;
 let mapObserver = null;
 let browseMode = false;
 let favFilterActive = false;
+// Filtro por lado: 'ALL' | 'T' | 'CT'. Persiste global (no por mapa) en fu_side_filter.
+let sideFilter = 'ALL';
+const SIDE_FILTER_CYCLE = ['ALL', 'T', 'CT'];
 let compactMode = false;
 let restoringAccordions = false;
 let saveAccordionDebounce = null;
@@ -211,6 +218,11 @@ function injectPanel() {
       </div>
       <div id="fu-search-bar" class="fu-hidden">
         <input id="fu-search" type="text" placeholder="Buscar lata..." autocomplete="off" spellcheck="false"/>
+        <div id="fu-side-filter" data-side="ALL" data-tooltip="Filtrar por lado" role="group" aria-label="Filtrar por lado">
+          <button class="fu-side-opt" data-side="ALL" aria-pressed="true">ALL</button>
+          <button class="fu-side-opt" data-side="T" aria-pressed="false">T</button>
+          <button class="fu-side-opt" data-side="CT" aria-pressed="false">CT</button>
+        </div>
         <button id="fu-fav-filter" data-tooltip="Solo favoritos"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
         <button id="fu-compact-toggle" data-tooltip="Modo compacto"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="3" x2="14" y2="3"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="2" y1="11" x2="14" y2="11"/><line x1="2" y1="15" x2="14" y2="15"/></svg></button>
         <button id="fu-collapse-all" data-tooltip="Colapsar todo"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,10 8,5 13,10"/><polyline points="3,14 8,9 13,14"/></svg></button>
@@ -232,11 +244,14 @@ function injectPanel() {
   document.body.appendChild(root);
   document.getElementById('fu-toggle').addEventListener('click', togglePanel);
   document.getElementById('fu-close').addEventListener('click', closePanel);
-  document.getElementById('fu-search').addEventListener('input', (e) => filterNades(e.target.value));
+  document.getElementById('fu-search').addEventListener('input', (e) => filterNades(e.target.value, { autoOpen: true }));
   document.getElementById('fu-fav-filter').addEventListener('click', () => {
     favFilterActive = !favFilterActive;
     document.getElementById('fu-fav-filter').classList.toggle('fu-active', favFilterActive);
     filterNades(document.getElementById('fu-search')?.value ?? '');
+  });
+  document.querySelectorAll('#fu-side-filter .fu-side-opt').forEach((btn) => {
+    btn.addEventListener('click', () => setSideFilter(btn.dataset.side));
   });
   document.getElementById('fu-compact-toggle').addEventListener('click', toggleCompactMode);
   document.getElementById('fu-collapse-all').addEventListener('click', () => {
@@ -250,6 +265,8 @@ function injectPanel() {
       el.style.display = '';
     });
     document.querySelector('#fu-content .fu-no-results')?.remove();
+    // Re-aplica el filtro de lado, que el reset de display de arriba acaba de borrar
+    filterNades('');
   });
   document.addEventListener('keydown', handlePanelKeydown);
 
@@ -275,6 +292,7 @@ function injectPanel() {
 
   document.getElementById('fu-lang-toggle').addEventListener('click', toggleLang);
   initCompactMode();
+  initSideFilter();
   initLang();
   document.getElementById('fu-map-select').addEventListener('change', (e) => {
     const map = e.target.value;
@@ -405,7 +423,7 @@ function renderUtilities(map, data) {
     if (!sideHtml) continue;
 
     html += `
-      <div class="fu-side-block">
+      <div class="fu-side-block" data-side="${side}">
         <div class="fu-side-label fu-side-${side.toLowerCase()}">${side}-Side</div>
         ${sideHtml}
       </div>
@@ -430,6 +448,8 @@ function renderUtilities(map, data) {
 
   document.getElementById('fu-search-bar')?.classList.remove('fu-hidden');
   applyUserData(map);
+  // El markup recién creado nace sin filtrar: re-aplica el lado elegido
+  if (sideFilter !== 'ALL') filterNades(document.getElementById('fu-search')?.value ?? '');
 
   // Pulse en el toggle si el panel está cerrado — ayuda a descubrir la extensión
   const panel = document.getElementById('fu-panel');
@@ -657,6 +677,7 @@ function buildShortcutsHTML(altKey) {
     <div class="fu-sc-row"><kbd>Esc</kbd><span>${t('shortcutEsc')}</span></div>
     <div class="fu-sc-row"><kbd>F</kbd><span>${t('shortcutSearch')}</span></div>
     <div class="fu-sc-row"><kbd>S</kbd><span>${t('shortcutFav')}</span></div>
+    <div class="fu-sc-row"><kbd>T</kbd><span>${t('shortcutSide')}</span></div>
     <div class="fu-sc-row"><kbd>C</kbd><span>${t('shortcutCompact')}</span></div>
     <div class="fu-sc-row"><kbd>↑ ↓</kbd><span>${t('shortcutNav')}</span></div>
   `;
@@ -690,6 +711,9 @@ function applyLanguage() {
   const favFilter = document.getElementById('fu-fav-filter');
   if (favFilter) favFilter.dataset.tooltip = t('favoritesOnly');
 
+  const sideFilterEl = document.getElementById('fu-side-filter');
+  if (sideFilterEl) sideFilterEl.dataset.tooltip = t('sideFilter');
+
   const compactToggle = document.getElementById('fu-compact-toggle');
   if (compactToggle) compactToggle.dataset.tooltip = t('compactMode');
 
@@ -719,6 +743,38 @@ function applyLanguage() {
   // Actualiza tooltips de items ya renderizados
   document.querySelectorAll('.fu-fav-btn').forEach((btn) => { btn.dataset.tooltip = t('favorite'); });
   document.querySelectorAll('.fu-learned-btn').forEach((btn) => { btn.dataset.tooltip = t('learned'); });
+}
+
+// ─── Filtro por lado (T / CT) ─────────────────────────────────────────────────
+// El lado viene de csnades.gg en item.side ('T' | 'CT' | 'UNKNOWN'), ya normalizado
+// por el scraper. renderUtilities agrupa en .fu-side-block[data-side], así que el
+// filtro solo tiene que mostrar u ocultar bloques enteros.
+async function initSideFilter() {
+  const result = await chrome.storage.local.get('fu_side_filter');
+  const stored = result.fu_side_filter;
+  sideFilter = SIDE_FILTER_CYCLE.includes(stored) ? stored : 'ALL';
+  applySideFilter();
+}
+
+async function setSideFilter(side) {
+  if (!SIDE_FILTER_CYCLE.includes(side) || side === sideFilter) return;
+  sideFilter = side;
+  await chrome.storage.local.set({ fu_side_filter: sideFilter });
+  applySideFilter();
+}
+
+function applySideFilter() {
+  const el = document.getElementById('fu-side-filter');
+  if (el) {
+    el.dataset.side = sideFilter;
+    el.querySelectorAll('.fu-side-opt').forEach((opt) => {
+      opt.setAttribute('aria-pressed', String(opt.dataset.side === sideFilter));
+    });
+  }
+  // Con un solo lado a la vista, el label "T-SIDE" / "CT-SIDE" es redundante
+  // (el pill ya lo indica) y solo gasta alto de panel.
+  document.getElementById('fu-panel')?.classList.toggle('fu-side-locked', sideFilter !== 'ALL');
+  filterNades(document.getElementById('fu-search')?.value ?? '');
 }
 
 // ─── Compact mode ─────────────────────────────────────────────────────────────
@@ -924,11 +980,21 @@ function updateProgress() {
   header?.style.setProperty('--fu-progress-pct', `${pct}%`);
 }
 
-function filterNades(query) {
+// autoOpen: solo cuando el usuario tipea en el buscador. Re-aplicar el filtro por
+// cualquier otro motivo (cambiar de lado, favoritos, re-render) debe respetar el
+// estado de colapso que el usuario dejó.
+function filterNades(query, { autoOpen = false } = {}) {
   const q = query.toLowerCase().trim();
   let totalVisible = 0;
 
   document.querySelectorAll('.fu-side-block').forEach((sideBlock) => {
+    // Los items UNKNOWN se renderizan en ambos bloques, así que nunca se pierden
+    // al filtrar por lado: quedan dentro del bloque que sí se muestra.
+    if (sideFilter !== 'ALL' && sideBlock.dataset.side !== sideFilter) {
+      sideBlock.style.display = 'none';
+      return;
+    }
+
     let sideVisible = 0;
 
     sideBlock.querySelectorAll('.fu-accordion').forEach((accordion) => {
@@ -944,7 +1010,7 @@ function filterNades(query) {
 
       accordion.style.display = accordionVisible ? '' : 'none';
       if (accordionVisible) {
-        if (q) accordion.open = true;
+        if (q && autoOpen) accordion.open = true;
         sideVisible += accordionVisible;
       }
     });
@@ -1030,6 +1096,10 @@ function handlePanelKeydown(e) {
     case 's': case 'S':
       e.preventDefault();
       document.getElementById('fu-fav-filter')?.click();
+      break;
+    case 't': case 'T':
+      e.preventDefault();
+      setSideFilter(SIDE_FILTER_CYCLE[(SIDE_FILTER_CYCLE.indexOf(sideFilter) + 1) % SIDE_FILTER_CYCLE.length]);
       break;
     case 'c': case 'C':
       e.preventDefault();

@@ -319,6 +319,110 @@
   box-shadow: 0 0 0 3px rgba(255, 85, 0, 0.15), 0 0 8px rgba(255, 85, 0, 0.08);
 }
 
+/* Filtro por lado — segmented pill ALL / T / CT */
+#fu-side-filter {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: #0d0d1e;
+  border: 1px solid #252545;
+  border-radius: 20px;
+  padding: 2px;
+  width: 70px;
+  height: 26px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+
+#fu-side-filter:hover {
+  border-color: #3a3a5a;
+}
+
+/* Indicador deslizante: toma el color del lado activo */
+#fu-side-filter::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / 3);
+  height: calc(100% - 4px);
+  border-radius: 20px;
+  background: #252545;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background 0.22s;
+  z-index: 0;
+}
+
+#fu-side-filter[data-side="T"]::before {
+  transform: translateX(100%);
+  background: #f0a500;
+}
+
+#fu-side-filter[data-side="CT"]::before {
+  transform: translateX(200%);
+  background: #3fa8ff;
+}
+
+#fu-side-filter::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a32;
+  border: 1px solid #252545;
+  color: #cccccc;
+  font-size: 10px;
+  white-space: nowrap;
+  padding: 3px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+}
+
+#fu-side-filter:hover::after {
+  opacity: 1;
+}
+
+.fu-side-opt {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #555;
+  transition: color 0.22s;
+}
+
+.fu-side-opt:hover {
+  color: #999;
+}
+
+#fu-side-filter[data-side="ALL"] .fu-side-opt[data-side="ALL"] {
+  color: #cccccc;
+}
+
+/* Sobre el indicador saturado, texto oscuro para contraste */
+#fu-side-filter[data-side="T"] .fu-side-opt[data-side="T"],
+#fu-side-filter[data-side="CT"] .fu-side-opt[data-side="CT"] {
+  color: #0f0f22;
+}
+
+/* Con un lado fijado, el label T-SIDE / CT-SIDE es redundante */
+#fu-panel.fu-side-locked .fu-side-label {
+  display: none;
+}
+
 #fu-fav-filter,
 #fu-compact-toggle,
 #fu-collapse-all {
